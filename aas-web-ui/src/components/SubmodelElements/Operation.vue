@@ -58,6 +58,14 @@
                 "
               />
 
+              <OperationResultValue
+                v-else-if="
+                  variableType.type !== 'inputVariables'
+                    && ['SubmodelElementCollection', 'SubmodelElementList'].includes(variable.value.modelType)
+                "
+                :element="variable.value"
+              />
+
               <SubmodelElementSummary v-else :element="variable.value" />
             </v-card>
           </template>

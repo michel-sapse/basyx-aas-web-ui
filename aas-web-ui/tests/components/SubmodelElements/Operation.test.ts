@@ -1,6 +1,8 @@
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Operation from '@/components/SubmodelElements/Operation.vue'
+import OperationResultValue from '@/components/SubmodelElements/OperationResultValue.vue'
 
 const postRequestMock = vi.fn()
 const getRequestMock = vi.fn()
@@ -48,6 +50,7 @@ const shallowStubs = {
   'ReferenceElement': true,
   'SubmodelElementSummary': true,
   'DescriptionElement': true,
+  'OperationResultValue': true,
 }
 
 function acceptedResponse (location = '/operation-status/handle-1') {
@@ -90,6 +93,54 @@ describe('Operation.vue', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('renders returned Records and inoutput collections, replacing results without mutating the definition', async () => {
+    const collection = (value: string) => ({
+      modelType: 'SubmodelElementCollection', idShort: 'Records',
+      value: [{ modelType: 'Property', idShort: 'Temperature', valueType: 'xs:double', value }],
+    })
+    const definition = {
+      ...defaultOperation, idShort: 'ReadRecords',
+      inputVariables: [{ value: collection('input') }],
+      outputVariables: [{ value: collection('initial') }],
+      inoutputVariables: [{ value: collection('initial-inoutput') }],
+    }
+    const before = structuredClone(definition)
+    const wrapper = mount(Operation, {
+      props: { operationObject: definition },
+      global: {
+        plugins: [createPinia()],
+        stubs: {
+          ...shallowStubs,
+          'v-container': { template: '<div><slot /></div>' },
+          'v-card': { template: '<div><slot /></div>' },
+          'v-list': { template: '<div><slot /></div>' },
+          'OperationResultValue': false,
+          'v-data-table': { props: ['items'], template: '<div><div v-for="item in items" :key="item.path">{{ item.path }} {{ item.value }}</div></div>' },
+        },
+      },
+    })
+    ;(wrapper.vm as any).invokeAsynchronously = false
+    postRequestMock.mockResolvedValueOnce({ success: true, data: {
+      executionState: 'Completed', outputArguments: [{ value: collection('21.50') }], inoutputArguments: [{ value: collection('updated') }],
+    } })
+    await (wrapper.vm as any).executeOperation()
+    expect(wrapper.findAllComponents(OperationResultValue)).toHaveLength(2)
+    expect(wrapper.text()).toContain('Records.Temperature 21.50')
+    expect(wrapper.text()).toContain('updated')
+    expect(wrapper.text()).not.toContain('initial')
+    expect(definition).toEqual(before)
+
+    postRequestMock.mockResolvedValueOnce({ success: true, data: {
+      executionState: 'Completed', outputArguments: [{ value: { modelType: 'SubmodelElementCollection', idShort: 'Records', value: [] } }], inoutputArguments: [],
+    } })
+    await (wrapper.vm as any).executeOperation()
+    expect(wrapper.text()).toContain('(empty)')
+    expect(wrapper.text()).not.toContain('21.50')
+    expect(wrapper.text()).not.toContain('updated')
+    expect(definition).toEqual(before)
+    wrapper.unmount()
   })
 
   it('uses the V3.2 async endpoint and follows its Location header after switching selection', async () => {
