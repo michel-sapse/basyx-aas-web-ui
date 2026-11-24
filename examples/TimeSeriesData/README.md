@@ -173,8 +173,9 @@ Use the locally developed UI on port 3000, connected to the AAS Environment on
 port 8081, rather than starting the example's published UI image.
 Open `SensorExampleAAS → TimeSeries → GetTimeSeries`.
 
-The fixture contains three temperature samples at `2026-11-24T09:00:00Z`,
-`09:05:00Z` and `09:10:00Z`, with values `20.5`, `21.0` and `21.5 °C`.
+The fixture contains 25 temperature samples at five-minute intervals from
+`2026-11-24T09:00:00Z` through `2026-11-24T11:00:00Z`. The first three values
+are `20.5`, `21.0` and `21.5 °C`.
 `Timespan` is a `Range<xs:dateTime>`. Both bounds are required and inclusive;
 equal bounds are allowed, reversed bounds are rejected. Bounds require `Z` or
 an explicit offset. Initial years 0001 and 9999 cover all fixture samples;
@@ -191,17 +192,21 @@ the example provides a reproducible backend for improving those renderers.
 
 `ReadRecords` uses two editable `Property<xs:dateTime>` arguments (`StartTime`
 and `EndTime`) instead of a Range, so it can be tested independently of changes
-to the Range input. Both are prefilled with the fixture interval. Its semantic
+to the Range input. Both are prefilled with the full 09:00–11:00 UTC fixture
+interval, returning 25 rows. With 10 items per page, the pages contain 10, 10,
+and 5 records. Initialization upgrades the previous untouched 09:00–09:10
+ReadRecords fixture to this interval; customized definitions are left unchanged.
+Its semantic
 ID is `https://admin-shell.io/idta/TimeSeries/ReadRecords/1/1`; the delegation
 target is local, never the production service. The output is a `Records`
 SubmodelElementCollection with named `Record1`, `Record2`, ... collections,
 each containing `time` (`xs:dateTime`) and `Temperature` (`xs:integer`), matching
 these two fields in the example's `Metadata.Record`. Temperature samples are
-20, 21 and 22, respectively; their semantic ID references the existing ConceptDescription.
+20 through 44; their semantic ID references the existing ConceptDescription.
 All seven metadata fields are populated with synthetic values: `time`,
 `Temperature`, `Humidity`, `AirQuality`, `rpm`, `pressure` and `vibration`.
-Humidity values are 45/46/47, AirQuality 420/435/450, rpm 1200/1250/1300,
-pressure 1013/1014/1015 and vibration 2/3/4. These are display fixtures, not
+Humidity starts at 45 (+1 per sample), AirQuality at 420 (+15), rpm at 1200
+(+50), pressure at 1013 (+1) and vibration at 2 (+1). These are display fixtures, not
 real sensor readings. The supplied example incorrectly reuses the Temperature
 ConceptDescription for rpm, pressure and vibration. Their headers consequently
 show °C; correct those semantic references before using the model operationally.

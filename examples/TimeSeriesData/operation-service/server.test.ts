@@ -16,7 +16,7 @@ test('supports offsets and equal bounds', () => {
   assert.equal(execute(input('2026-11-24T10:05:00+01:00', '2026-11-24T09:05:00Z')).outputArguments?.[0].value.value.length, 1)
 })
 test('preserves extreme years and returns empty results outside the fixture', () => {
-  assert.equal(execute(input('0001-01-01T00:00:00Z', '9999-12-31T23:59:59Z')).outputArguments?.[0].value.value.length, 3)
+  assert.equal(execute(input('0001-01-01T00:00:00Z', '9999-12-31T23:59:59Z')).outputArguments?.[0].value.value.length, 25)
   assert.equal(execute(input('2026-11-25T00:00:00Z', '2026-11-26T00:00:00Z')).outputArguments?.[0].value.value.length, 0)
 })
 test('rejects missing timezone, invalid calendar date, reversed and missing bounds', () => {
@@ -56,6 +56,15 @@ function expectRecords (result: ReturnType<typeof executeReadRecords>, count: nu
   assert.equal(result.outputArguments[0].value.modelType, 'SubmodelElementCollection')
   assert.equal(result.outputArguments[0].value.value.length, count)
 }
+test('returns 25 records at five-minute intervals for pagination', () => {
+  const result = executeReadRecords([
+    { value: { idShort: 'StartTime', modelType: 'Property', valueType: 'xs:dateTime', value: '2026-11-24T09:00:00Z' } },
+    { value: { idShort: 'EndTime', modelType: 'Property', valueType: 'xs:dateTime', value: '2026-11-24T11:00:00Z' } },
+  ])
+  expectRecords(result, 25)
+  assert.equal(result.outputArguments[0].value.value[24].value[0].value, '2026-11-24T11:00:00Z')
+  assert.equal(result.outputArguments[0].value.value[24].value[1].value, '44')
+})
 test('HTTP service handles health, successful calls, malformed JSON and unknown routes', async () => {
   const server = createOperationServer()
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))

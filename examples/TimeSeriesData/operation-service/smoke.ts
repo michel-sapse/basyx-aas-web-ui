@@ -65,7 +65,7 @@ assert.equal(recordsResponse.status, 200, await recordsResponse.clone().text())
 const recordsResult = await recordsResponse.json()
 assert.equal(recordsResult.outputArguments[0].value.idShort, 'Records')
 assert.equal(recordsResult.outputArguments[0].value.modelType, 'SubmodelElementCollection')
-assert.equal(recordsResult.outputArguments[0].value.value.length, 3)
+assert.equal(recordsResult.outputArguments[0].value.value.length, 25)
 // Invocation results must not mutate the saved operation definition.
 const persisted = await (await fetch(recordsUrl)).json()
 assert.deepEqual(persisted.outputVariables[0].value.value, [])

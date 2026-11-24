@@ -1,11 +1,10 @@
 import { createServer } from 'node:http'
 import { pathToFileURL } from 'node:url'
 
-const samples = [
-  { timestamp: '2026-11-24T09:00:00Z', temperature: '20.5' },
-  { timestamp: '2026-11-24T09:05:00Z', temperature: '21.0' },
-  { timestamp: '2026-11-24T09:10:00Z', temperature: '21.5' },
-]
+const samples = Array.from({ length: 25 }, (_, index) => ({
+  timestamp: new Date(Date.parse('2026-11-24T09:00:00Z') + index * 5 * 60_000).toISOString().replace('.000Z', 'Z'),
+  temperature: String(20.5 + index * 0.5),
+}))
 
 // Synthetic demo values for all fields of the example's Metadata.Record.
 // The final three fields deliberately retain the example's existing (incorrect)
@@ -95,7 +94,7 @@ export function executeReadRecords (input: unknown) {
           { ...record.value[0], idShort: 'time', semanticId: { type: 'ExternalReference', keys: [{ type: 'GlobalReference', value: 'https://admin-shell.io/idta/TimeSeries/RelativePointInTime/1/1' }] } },
           ...recordMetrics.map(metric => ({
             modelType: 'Property', idShort: metric.name, valueType: 'xs:integer',
-            value: metric.values[samples.findIndex(sample => sample.timestamp === record.value[0].value)],
+            value: String(Number(metric.values[0]) + samples.findIndex(sample => sample.timestamp === record.value[0].value) * (Number(metric.values[1]) - Number(metric.values[0]))),
             semanticId: { type: 'ModelReference', keys: [{ type: 'ConceptDescription', value: metric.conceptId }] },
           })),
         ],
