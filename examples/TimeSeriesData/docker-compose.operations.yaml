@@ -1,0 +1,38 @@
+services:
+  aas-env:
+    environment:
+      SMREPO_DELEGATION_TRUSTED_HOSTS: timeseries-operation:8080,172.29.0.10:8080
+    networks:
+      default:
+      operations:
+
+  timeseries-operation:
+    build: ./operation-service
+    networks:
+      operations:
+        ipv4_address: 172.29.0.10
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  timeseries-operation-init:
+    build: ./operation-service
+    command: ["node", "initialize.ts"]
+    environment:
+      AAS_ENDPOINT: http://aas-env:8081
+    networks:
+      operations:
+    depends_on:
+      aas-env:
+        condition: service_healthy
+      timeseries-operation:
+        condition: service_healthy
+
+networks:
+  operations:
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24

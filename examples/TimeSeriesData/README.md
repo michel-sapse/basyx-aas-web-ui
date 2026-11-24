@@ -153,6 +153,53 @@ Line, Area, and Scatter charts support x-axis selection, zoom in/out, pan, and r
 
 Gauge values, labels, and units remain visible without hovering. Selecting multiple y-values creates separate responsive gauges. Display Field shows the newest value and formats numeric values with two decimal places.
 
+## Optional delegated time-series operation
+
+For developing the operation dialog, add the optional overlay:
+
+```shell
+docker compose -f docker-compose.yaml -f docker-compose.operations.yaml up -d --build timeseries-operation-init
+```
+
+This keeps the original AASX unchanged and adds `GetTimeSeries` to the existing
+TimeSeries submodel using the repository API. Initialization does not overwrite
+an existing operation. The AAS Environment delegates invocation to a small
+TypeScript HTTP service; the browser still calls the normal AAS API.
+The overlay uses an additional network (`172.29.0.0/24`) and allowlists only the
+delegated service name and its fixed IP. If this subnet conflicts with another
+network, change the subnet, service IP and delegation allowlist together.
+
+Use the locally developed UI on port 3000, connected to the AAS Environment on
+port 8081, rather than starting the example's published UI image.
+Open `SensorExampleAAS → TimeSeries → GetTimeSeries`.
+
+The fixture contains three temperature samples at `2026-11-24T09:00:00Z`,
+`09:05:00Z` and `09:10:00Z`, with values `20.5`, `21.0` and `21.5 °C`.
+`Timespan` is a `Range<xs:dateTime>`. Both bounds are required and inclusive;
+equal bounds are allowed, reversed bounds are rejected. Bounds require `Z` or
+an explicit offset. Initial years 0001 and 9999 cover all fixture samples;
+they are values, not picker limits. A range outside the fixture returns an
+empty `Samples` list. Set `SimulateError` to true for a reproducible failure.
+
+Outputs are full-metadata AAS OperationVariables: `Samples` is a
+SubmodelElementList of SubmodelElementCollections containing `Timestamp`,
+`Temperature` and `Unit` properties. This is a demo response contract, not a
+claim of compliance with the complete IDTA time-series segment model.
+Results belong to the invocation and are not written back into the submodel.
+The unmodified UI may only show a summary for the Range and the result list;
+the example provides a reproducible backend for improving those renderers.
+
+Check the service and actual synchronous/asynchronous AAS invocation with Node 24:
+
+```shell
+node --test operation-service/server.test.ts
+node operation-service/smoke.ts
+```
+
+When managing this optional stack, continue passing both Compose files (also
+for `stop` or `down`). The service intentionally exposes no host port and
+requires no dependencies beyond Node. Demo data is separate from InfluxDB.
+
 ## Stop or reset the example
 
 Stop the running containers without removing them:

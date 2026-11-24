@@ -1,0 +1,11 @@
+{
+  "name": "timeseries-operation-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.ts",
+    "test": "node --test server.test.ts",
+    "smoke": "node smoke.ts"
+  },
+  "engines": { "node": ">=24 <25" }
+}
