@@ -215,8 +215,12 @@ temporary result. The `clear` action clears it as well.
 Uniform collections of records are displayed as one record per row and one
 Property per column, preserving lexical values and showing the valueType in
 each header. Non-uniform or nested structures retain the generic element/value
-table. Unit resolution from RecordMetadata/ConceptDescriptions is not yet
-implemented in the operation result renderer.
+table. The operation result renderer reads `Metadata.Record` from the owning
+submodel and resolves ConceptDescriptions once per column to show available
+units. It does not infer a unit when a returned field has a different valueType
+or conflicting semantic ID. Missing metadata leaves the values visible and
+shows a notice. Metadata lookup currently expects `Metadata` and accepts either
+the Record semantic ID or `Record` as the metadata collection name.
 
 Check the service and actual synchronous/asynchronous AAS invocation with Node 24:
 

@@ -75,6 +75,7 @@
                     && ['SubmodelElementCollection', 'SubmodelElementList'].includes(variable.value.modelType)
                 "
                 :element="variable.value"
+                :operation-path="operationObject.path"
               />
 
               <SubmodelElementSummary v-else :element="variable.value" />

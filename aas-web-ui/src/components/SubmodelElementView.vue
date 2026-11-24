@@ -117,7 +117,7 @@
               Temporary, read-only result; the stored definition is unchanged. Cleared on browser reload.
             </v-alert>
 
-            <OperationResultValue :element="invocationResult.element" />
+            <OperationResultValue :element="invocationResult.element" :operation-path="submodelElementData.persistence.operationPath" />
           </template>
 
           <Submodel
