@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { operationResultRows } from '@/utils/AAS/OperationResultUtils'
+import { operationRecordTable, operationResultRows } from '@/utils/AAS/OperationResultUtils'
 
 describe('operationResultRows', () => {
+  it('pivots uniform records by field name and preserves lexical values', () => {
+    const time = { modelType: 'Property', idShort: 'time', valueType: 'xs:dateTime', value: '2026-11-24T09:00:00Z' }
+    const temperature = { modelType: 'Property', idShort: 'Temperature', valueType: 'xs:integer', value: '20' }
+    const record = { modelType: 'SubmodelElementCollection', idShort: 'Record1', value: [time, temperature] }
+    const records = { modelType: 'SubmodelElementCollection', value: [record, { ...record, idShort: 'Record2', value: [temperature, time] }] }
+    const table = operationRecordTable(records)
+    expect(table?.items).toHaveLength(2)
+    expect(table?.items[1].field0).toBe(time.value)
+    expect(table?.items[1].field1).toBe('20')
+    expect(operationRecordTable({ ...records, value: [record, { ...record, value: [time] }] })).toBeUndefined()
+    expect(operationRecordTable({ ...records, value: [record, { ...record, value: [time, time] }] })).toBeUndefined()
+  })
   it('exposes nested Records values without changing the result', () => {
     const records = {
       modelType: 'SubmodelElementCollection', idShort: 'Records', value: [{

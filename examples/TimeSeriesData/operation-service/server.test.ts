@@ -35,6 +35,9 @@ test('ReadRecords accepts the two property inputs and returns a named Records co
   ]
   const result = executeReadRecords(args)
   expectRecords(result, 2)
+  assert.equal(result.outputArguments[0].value.value[0].value[0].idShort, 'time')
+  assert.equal(result.outputArguments[0].value.value[0].value[1].valueType, 'xs:integer')
+  assert.equal(result.outputArguments[0].value.value[0].value[1].value, '20')
   assert.throws(() => executeReadRecords(args.slice(0, 1)))
   args[0].value.value = '2026-11-25T00:00:00Z'
   assert.throws(() => executeReadRecords(args))

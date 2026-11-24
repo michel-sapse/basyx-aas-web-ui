@@ -4,9 +4,9 @@
 
     <v-data-table
       density="compact"
-      :headers="headers"
-      item-value="path"
-      :items="rows"
+      :headers="recordTable?.headers ?? headers"
+      :item-value="recordTable ? 'record' : 'path'"
+      :items="recordTable?.items ?? rows"
       :items-per-page="10"
     >
       <template #item.value="{ item }">
@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
   import { useReferableUtils } from '@/composables/AAS/ReferableUtils'
-  import { operationResultRows } from '@/utils/AAS/OperationResultUtils'
+  import { operationRecordTable, operationResultRows } from '@/utils/AAS/OperationResultUtils'
 
   const props = defineProps<{ element: any }>()
   const { nameToDisplay } = useReferableUtils()
@@ -28,4 +28,5 @@
     { title: 'Type', key: 'valueType' },
   ]
   const rows = computed(() => operationResultRows(props.element))
+  const recordTable = computed(() => operationRecordTable(props.element))
 </script>

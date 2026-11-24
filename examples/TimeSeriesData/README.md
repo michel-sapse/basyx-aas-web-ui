@@ -195,7 +195,11 @@ to the Range input. Both are prefilled with the fixture interval. Its semantic
 ID is `https://admin-shell.io/idta/TimeSeries/ReadRecords/1/1`; the delegation
 target is local, never the production service. The output is a `Records`
 SubmodelElementCollection with named `Record1`, `Record2`, ... collections,
-each containing `Timestamp`, `Temperature` and `Unit`. The exact inner layout
+each containing `time` (`xs:dateTime`) and `Temperature` (`xs:integer`), matching
+these two fields in the example's `Metadata.Record`. Temperature samples are
+20, 21 and 22, respectively; their semantic ID references the existing ConceptDescription.
+Other optional metadata fields are not populated. No synthetic `Unit` property
+is added to this operation. The exact inner layout
 is demo data and must be checked against a real service response before claiming
 compatibility with a production backend. The smoke check also verifies that
 invoking `ReadRecords` leaves its persisted output definition unchanged.
@@ -207,6 +211,12 @@ operation restores that result. The tree and JSON representation still refer
 to the stored definition; no result values are saved to the backend. Browser
 reload, switching infrastructures, or starting another invocation clears the
 temporary result. The `clear` action clears it as well.
+
+Uniform collections of records are displayed as one record per row and one
+Property per column, preserving lexical values and showing the valueType in
+each header. Non-uniform or nested structures retain the generic element/value
+table. Unit resolution from RecordMetadata/ConceptDescriptions is not yet
+implemented in the operation result renderer.
 
 Check the service and actual synchronous/asynchronous AAS invocation with Node 24:
 

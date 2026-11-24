@@ -75,7 +75,15 @@ export function executeReadRecords (input: unknown) {
     executionState: 'Completed', success: true, inoutputArguments: [],
     outputArguments: [{ value: {
       idShort: 'Records', modelType: 'SubmodelElementCollection',
-      value: result.outputArguments?.[0].value.value.map((record, index) => ({ ...record, idShort: `Record${index + 1}` })) ?? [],
+      value: result.outputArguments?.[0].value.value.map((record, index) => ({
+        modelType: 'SubmodelElementCollection',
+        idShort: `Record${index + 1}`,
+        semanticId: { type: 'ExternalReference', keys: [{ type: 'GlobalReference', value: 'https://admin-shell.io/idta/TimeSeries/Record/1/1' }] },
+        value: [
+          { ...record.value[0], idShort: 'time', semanticId: { type: 'ExternalReference', keys: [{ type: 'GlobalReference', value: 'https://admin-shell.io/idta/TimeSeries/RelativePointInTime/1/1' }] } },
+          { modelType: 'Property', idShort: 'Temperature', valueType: 'xs:integer', value: String(20 + samples.findIndex(sample => sample.timestamp === record.value[0].value)), semanticId: { type: 'ModelReference', keys: [{ type: 'ConceptDescription', value: '0173-1#02-AAZ842#002' }] } },
+        ],
+      })) ?? [],
     } }],
   }
 }
