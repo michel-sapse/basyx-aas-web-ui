@@ -38,6 +38,12 @@ test('ReadRecords accepts the two property inputs and returns a named Records co
   assert.equal(result.outputArguments[0].value.value[0].value[0].idShort, 'time')
   assert.equal(result.outputArguments[0].value.value[0].value[1].valueType, 'xs:integer')
   assert.equal(result.outputArguments[0].value.value[0].value[1].value, '20')
+  assert.deepEqual(result.outputArguments[0].value.value[0].value.map(field => field.idShort), [
+    'time', 'Temperature', 'Humidity', 'AirQuality', 'rpm', 'pressure', 'vibration',
+  ])
+  assert.deepEqual(result.outputArguments[0].value.value[1].value.map(field => field.value), [
+    '2026-11-24T09:05:00Z', '21', '46', '435', '1250', '1014', '3',
+  ])
   assert.throws(() => executeReadRecords(args.slice(0, 1)))
   args[0].value.value = '2026-11-25T00:00:00Z'
   assert.throws(() => executeReadRecords(args))

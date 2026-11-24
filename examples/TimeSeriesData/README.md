@@ -198,7 +198,14 @@ SubmodelElementCollection with named `Record1`, `Record2`, ... collections,
 each containing `time` (`xs:dateTime`) and `Temperature` (`xs:integer`), matching
 these two fields in the example's `Metadata.Record`. Temperature samples are
 20, 21 and 22, respectively; their semantic ID references the existing ConceptDescription.
-Other optional metadata fields are not populated. No synthetic `Unit` property
+All seven metadata fields are populated with synthetic values: `time`,
+`Temperature`, `Humidity`, `AirQuality`, `rpm`, `pressure` and `vibration`.
+Humidity values are 45/46/47, AirQuality 420/435/450, rpm 1200/1250/1300,
+pressure 1013/1014/1015 and vibration 2/3/4. These are display fixtures, not
+real sensor readings. The supplied example incorrectly reuses the Temperature
+ConceptDescription for rpm, pressure and vibration. Their headers consequently
+show °C; correct those semantic references before using the model operationally.
+No synthetic `Unit` property
 is added to this operation. The exact inner layout
 is demo data and must be checked against a real service response before claiming
 compatibility with a production backend. The smoke check also verifies that

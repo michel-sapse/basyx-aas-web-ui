@@ -7,6 +7,18 @@ const samples = [
   { timestamp: '2026-11-24T09:10:00Z', temperature: '21.5' },
 ]
 
+// Synthetic demo values for all fields of the example's Metadata.Record.
+// The final three fields deliberately retain the example's existing (incorrect)
+// temperature ConceptDescription reference; their units require model correction.
+const recordMetrics = [
+  { name: 'Temperature', values: ['20', '21', '22'], conceptId: '0173-1#02-AAZ842#002' },
+  { name: 'Humidity', values: ['45', '46', '47'], conceptId: '0173-1#02-ABC147#002' },
+  { name: 'AirQuality', values: ['420', '435', '450'], conceptId: 'https://example.com/ids/ConceptDescription/7253_9282_7269_8356' },
+  { name: 'rpm', values: ['1200', '1250', '1300'], conceptId: '0173-1#02-AAZ842#002' },
+  { name: 'pressure', values: ['1013', '1014', '1015'], conceptId: '0173-1#02-AAZ842#002' },
+  { name: 'vibration', values: ['2', '3', '4'], conceptId: '0173-1#02-AAZ842#002' },
+]
+
 type Variable = { value: { idShort?: string, modelType?: string, valueType?: string, min?: string, max?: string, value?: unknown } }
 
 function parseTimestamp (value: unknown): number {
@@ -81,7 +93,11 @@ export function executeReadRecords (input: unknown) {
         semanticId: { type: 'ExternalReference', keys: [{ type: 'GlobalReference', value: 'https://admin-shell.io/idta/TimeSeries/Record/1/1' }] },
         value: [
           { ...record.value[0], idShort: 'time', semanticId: { type: 'ExternalReference', keys: [{ type: 'GlobalReference', value: 'https://admin-shell.io/idta/TimeSeries/RelativePointInTime/1/1' }] } },
-          { modelType: 'Property', idShort: 'Temperature', valueType: 'xs:integer', value: String(20 + samples.findIndex(sample => sample.timestamp === record.value[0].value)), semanticId: { type: 'ModelReference', keys: [{ type: 'ConceptDescription', value: '0173-1#02-AAZ842#002' }] } },
+          ...recordMetrics.map(metric => ({
+            modelType: 'Property', idShort: metric.name, valueType: 'xs:integer',
+            value: metric.values[samples.findIndex(sample => sample.timestamp === record.value[0].value)],
+            semanticId: { type: 'ModelReference', keys: [{ type: 'ConceptDescription', value: metric.conceptId }] },
+          })),
         ],
       })) ?? [],
     } }],
