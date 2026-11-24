@@ -1,3 +1,6 @@
+import type { OperationResultElement } from '@/types/OperationResult'
+import { resultChildren } from '@/types/OperationResult'
+
 export type OperationResultRow = {
   path: string
   value: string
@@ -6,35 +9,37 @@ export type OperationResultRow = {
 
 // Only pivot uniform collections of scalar Properties; all other AAS shapes
 // retain the generic, lossless element/value view.
-export function operationRecordTable (element: any): { headers: { title: string, key: string }[], items: Record<string, string>[] } | undefined {
-  if (element?.modelType !== 'SubmodelElementCollection' || !Array.isArray(element.value) || element.value.length === 0) {
+export function operationRecordTable (element: OperationResultElement): { headers: { title: string, key: string }[], items: Record<string, string>[], fields: OperationResultElement[] } | undefined {
+  const records = resultChildren(element)
+  if (element.modelType !== 'SubmodelElementCollection' || !records?.length) {
     return
   }
-  const records = element.value
-  if (!records.every((record: any) => record?.modelType === 'SubmodelElementCollection' && Array.isArray(record.value) && record.value.length > 0)) {
+  const recordFields = records.map(record => record.modelType === 'SubmodelElementCollection' ? resultChildren(record) : undefined)
+  if (!recordFields.every((fields): fields is OperationResultElement[] => !!fields?.length)) {
     return
   }
-  const fields = records[0].value
-  if (!fields.every((field: any) => field?.modelType === 'Property' && typeof field.idShort === 'string' && field.idShort.length > 0)) {
+  const fields = recordFields[0]
+  if (!fields.every(field => field.modelType === 'Property' && typeof field.idShort === 'string' && field.idShort.length > 0)) {
     return
   }
-  const names = fields.map((field: any) => field.idShort) as string[]
+  const names = fields.map(field => field.idShort!)
   if (new Set(names).size !== names.length) {
     return
   }
-  if (!records.every((record: any) => record.value.length === names.length && names.every((name, index) => {
-    const matches = record.value.filter((field: any) => field?.idShort === name)
+  if (!recordFields.every(record => record.length === names.length && names.every((name, index) => {
+    const matches = record.filter(field => field.idShort === name)
     return matches.length === 1 && matches[0].modelType === 'Property' && matches[0].valueType === fields[index].valueType
       && (matches[0].value == null || ['string', 'number', 'boolean'].includes(typeof matches[0].value))
   }))) {
     return
   }
   return {
+    fields,
     headers: [{ title: 'Record', key: 'record' }, ...names.map((name, index) => ({ title: `${name} (${fields[index].valueType})`, key: `field${index}` }))],
-    items: records.map((record: any, index: number) => Object.fromEntries([
+    items: records.map((record, index) => Object.fromEntries([
       ['record', record.idShort || String(index + 1)],
       ...names.map((name, fieldIndex) => {
-        const value = record.value.find((field: any) => field.idShort === name).value
+        const value = recordFields[index].find(field => field.idShort === name)!.value
         return [`field${fieldIndex}`, value == null ? '(no value)' : String(value)]
       }),
     ])),
@@ -43,17 +48,20 @@ export function operationRecordTable (element: any): { headers: { title: string,
 
 // Invocation results have no repository paths. Read their values without fetching
 // or persisting anything, retaining list indexes and the original lexical values.
-export function operationResultRows (element: any, path = element?.idShort || 'Result'): OperationResultRow[] {
-  if (['SubmodelElementCollection', 'SubmodelElementList'].includes(element?.modelType)) {
-    if (!element.value?.length) {
-      return [{ path, value: '(empty)', valueType: element.modelType }]
+export function operationResultRows (element: OperationResultElement, path = element?.idShort || 'Result'): OperationResultRow[] {
+  if (['SubmodelElementCollection', 'SubmodelElementList'].includes(element?.modelType ?? '')) {
+    const children = resultChildren(element)
+    if (children?.length === 0 || element.value == null) {
+      return [{ path, value: '(empty)', valueType: element.modelType ?? '' }]
     }
-    return element.value.flatMap((child: any, index: number) => operationResultRows(
-      child,
-      element.modelType === 'SubmodelElementList'
-        ? `${path}[${index}]`
-        : `${path}.${child.idShort || `[${index}]`}`,
-    ))
+    if (children) {
+      return children.flatMap((child, index) => operationResultRows(
+        child,
+        element.modelType === 'SubmodelElementList'
+          ? `${path}[${index}]`
+          : `${path}.${child.idShort || `[${index}]`}`,
+      ))
+    }
   }
   let value = element?.value
   if (element?.modelType === 'Range') {

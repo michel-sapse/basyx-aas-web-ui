@@ -19,18 +19,13 @@
 </template>
 
 <script setup lang="ts">
-  import { useConceptDescriptionHandling } from '@/composables/AAS/ConceptDescriptionHandling'
+  import type { OperationResultElement } from '@/types/OperationResult'
+  import { useOperationRecordMetadata } from '@/composables/AAS/OperationRecordMetadata'
   import { useReferableUtils } from '@/composables/AAS/ReferableUtils'
-  import { useSMRepositoryClient } from '@/composables/Client/SMRepositoryClient'
   import { operationRecordTable, operationResultRows } from '@/utils/AAS/OperationResultUtils'
 
-  const props = defineProps<{ element: any, operationPath?: string }>()
+  const props = defineProps<{ element: OperationResultElement, operationPath?: string }>()
   const { nameToDisplay } = useReferableUtils()
-  const { fetchSme } = useSMRepositoryClient()
-  const { fetchCds, unitSuffix } = useConceptDescriptionHandling()
-  const units = ref<Record<string, string>>({})
-  const metadataNotice = ref('')
-  let generation = 0
   const headers = [
     { title: 'Element', key: 'path' },
     { title: 'Value', key: 'value' },
@@ -45,54 +40,15 @@
     return name
   })
   const recordTable = computed(() => operationRecordTable(props.element))
+  const { units, notice: metadataNotice } = useOperationRecordMetadata(
+    () => props.operationPath,
+    () => props.element.idShort === 'Records' ? recordTable.value?.fields : undefined,
+  )
   const recordHeaders = computed(() => recordTable.value?.headers.map((header, index) => {
     if (index === 0) return header
-    const field = props.element.value[0].value[index - 1]
-    const unit = units.value[field.idShort]
-    return { ...header, title: unit ? `${field.idShort} [${unit}] (${field.valueType})` : header.title }
+    const field = recordTable.value!.fields[index - 1]
+    const unit = units.value[field.idShort ?? '']
+    const name = nameToDisplay(field)
+    return { ...header, title: `${name}${unit ? ` [${unit}]` : ''} (${field.valueType})` }
   }))
-
-  watch(() => [props.operationPath, recordTable.value ? JSON.stringify(props.element.value[0].value.map((field: any) => ({ idShort: field.idShort, valueType: field.valueType, semanticId: field.semanticId }))) : ''], async () => {
-    const current = ++generation
-    units.value = {}
-    metadataNotice.value = ''
-    if (!recordTable.value || !props.operationPath || props.element.idShort !== 'Records') return
-    const separator = props.operationPath.indexOf('/submodel-elements/')
-    if (separator === -1) return
-    metadataNotice.value = 'Loading record metadata…'
-    try {
-      const metadata = await fetchSme(`${props.operationPath.slice(0, separator)}/submodel-elements/Metadata`)
-      if (current !== generation) return
-      const record = metadata?.value?.find((element: any) => element.semanticId?.keys?.some((key: any) => key.value === 'https://admin-shell.io/idta/TimeSeries/Record/1/1') || element.idShort === 'Record')
-      if (!Array.isArray(record?.value)) {
-        metadataNotice.value = 'Record metadata unavailable; values are shown without inferred units.'
-        return
-      }
-      const fields = props.element.value[0].value
-      let mismatch = false
-      const entries = await Promise.all(fields.map(async (field: any) => {
-        const matches = record.value.filter((candidate: any) => candidate.idShort === field.idShort)
-        const definition = matches.length === 1 ? matches[0] : undefined
-        const returnedIds = field.semanticId?.keys?.map((key: any) => key.value) ?? []
-        const definedIds = definition?.semanticId?.keys?.map((key: any) => key.value) ?? []
-        if (!definition || definition.valueType !== field.valueType || (returnedIds.length > 0 && !returnedIds.some((id: string) => definedIds.includes(id)))) {
-          mismatch = true
-          return [field.idShort, '']
-        }
-        const cds = await fetchCds(definition)
-        return [field.idShort, unitSuffix({ conceptDescriptions: cds })]
-      }))
-      if (current !== generation) return
-      units.value = Object.fromEntries(entries)
-      metadataNotice.value = mismatch ? 'Some returned fields do not match Record metadata; their units are not inferred.' : ''
-    } catch {
-      if (current === generation) {
-        metadataNotice.value = 'Record metadata unavailable; values are shown without inferred units.'
-      }
-    }
-  }, { immediate: true })
-
-  onBeforeUnmount(() => {
-    generation++
-  })
 </script>

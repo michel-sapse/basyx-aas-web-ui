@@ -123,7 +123,7 @@ describe('SubmodelElementView Operation-owned inline updates', () => {
     })
     await flushPromises()
     expect(wrapper.text()).toContain('Result of the last invocation')
-    expect(wrapper.findComponent(OperationResultValue).props('element').value[0].value).toBe('20.5')
+    expect(wrapper.findComponent(OperationResultValue).props('element').value).toEqual([{ modelType: 'Property', idShort: 'Temperature', value: '20.5', valueType: 'xs:double' }])
     expect(mocks.selectedNode.value).toEqual([])
     expect(mocks.mutateOperation).not.toHaveBeenCalled()
     wrapper.unmount()

@@ -1,11 +1,12 @@
+import type { OperationInvocationResult, OperationResultDefinition, OperationResultElement } from '@/types/OperationResult'
 import type { OperationPersistenceBoundary } from '@/types/OperationTree'
 import { defineStore } from 'pinia'
 import { useInfrastructureStore } from '@/store/InfrastructureStore'
 import { canonicalTreeElementJson, resolveOperationLocator } from '@/utils/AAS/OperationTreeUtils'
 
 type Snapshot = {
-  definition: any
-  result: any
+  definition: OperationResultDefinition
+  result: OperationInvocationResult
   completedAt: string
 }
 
@@ -18,7 +19,7 @@ export const useOperationResultStore = defineStore('operationResults', () => {
     snapshots.value = {}
   }, { flush: 'sync' })
 
-  function remember (path: string, definition: any, result: any): void {
+  function remember (path: string, definition: OperationResultDefinition, result: OperationInvocationResult): void {
     if (!path) {
       return
     }
@@ -33,7 +34,7 @@ export const useOperationResultStore = defineStore('operationResults', () => {
     delete snapshots.value[path]
   }
 
-  function forOperation (path: string, definition: any): Snapshot | undefined {
+  function forOperation (path: string, definition: OperationResultDefinition): Snapshot | undefined {
     const snapshot = snapshots.value[path]
     if (!snapshot || canonicalTreeElementJson(definition) !== canonicalTreeElementJson(snapshot.definition)) {
       return
@@ -41,7 +42,7 @@ export const useOperationResultStore = defineStore('operationResults', () => {
     return snapshot
   }
 
-  function forNode (boundary: OperationPersistenceBoundary, node: any): { element: any, completedAt: string } | undefined {
+  function forNode (boundary: OperationPersistenceBoundary, node: unknown): { element: OperationResultElement, completedAt: string } | undefined {
     const snapshot = snapshots.value[boundary.operationPath]
     const [direction, index, valueSegment, ...childLocator] = boundary.locator
     if (!snapshot || !['outputVariables', 'inoutputVariables'].includes(String(direction)) || typeof index !== 'number' || valueSegment !== 'value') {
@@ -52,14 +53,14 @@ export const useOperationResultStore = defineStore('operationResults', () => {
     if (!definitionNode || canonicalTreeElementJson(node) !== canonicalTreeElementJson(definitionNode)) {
       return
     }
-    const definedVariable = snapshot.definition[direction]?.[index]?.value
+    const definedVariable = (direction === 'outputVariables' ? snapshot.definition.outputVariables : snapshot.definition.inoutputVariables)?.[index]?.value
     const argumentName = direction === 'outputVariables' ? 'outputArguments' : 'inoutputArguments'
     const argumentsArray = snapshot.result[argumentName]
     if (!Array.isArray(argumentsArray)) {
       return
     }
     // Match names rather than assuming the server returns variables in definition order.
-    const matches = argumentsArray.filter((argument: any) => argument?.value?.idShort === definedVariable?.idShort)
+    const matches = argumentsArray.filter(argument => argument?.value?.idShort === definedVariable?.idShort)
     if (matches.length !== 1) {
       return
     }

@@ -35,7 +35,7 @@ describe('OperationResultStore', () => {
     const store = useOperationResultStore()
     store.remember('/op', definition, result)
     const node = decorateResolvedOperationNode(records, '/op', ['outputVariables', 0, 'value'])
-    expect(store.forNode(node.persistence, node)?.element.value[0].value).toBe('20.5')
+    expect(store.forNode(node.persistence, node)?.element.value).toEqual(result.outputArguments[0].value.value)
     expect(node.value).toEqual([])
     const count = decorateResolvedOperationNode(definition.inoutputVariables[0].value, '/op', ['inoutputVariables', 0, 'value'])
     expect(store.forNode(count.persistence, count)?.element.value).toBe('1')
