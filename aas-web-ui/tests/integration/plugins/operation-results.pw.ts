@@ -1,0 +1,35 @@
+import { expect, test } from '@playwright/test'
+
+test('ReadRecords results survive tree navigation and paginate without persistence', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' })
+  await page.getByText('SensorExampleAAS', { exact: true }).first().click()
+  await page.getByText('TimeSeries', { exact: true }).first().click()
+  await expect(page).toHaveURL(/path=/)
+  await page.getByText('ReadRecords', { exact: true }).first().click()
+  await expect(page).toHaveURL(/ReadRecords/)
+  await page.getByRole('button', { name: 'execute', exact: true }).click()
+
+  await expect(page.getByText('Records (25)', { exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Temperature [°C] (xs:integer)' })).toBeVisible()
+  const rows = page.locator('.v-data-table tbody tr')
+  await expect(rows).toHaveCount(10)
+  await page.getByRole('button', { name: 'Next page', exact: true }).click()
+  await expect(page.getByText('11-20 of 25', { exact: true })).toBeVisible()
+  await expect(rows).toHaveCount(10)
+  await page.getByRole('button', { name: 'Next page', exact: true }).click()
+  await expect(page.getByText('21-25 of 25', { exact: true })).toBeVisible()
+  await expect(rows).toHaveCount(5)
+  await expect(page.getByRole('button', { name: 'Next page', exact: true })).toBeDisabled()
+
+  await page.getByText('[0] Records', { exact: true }).click()
+  await expect(page.getByText(/Temporary, read-only result/)).toBeVisible()
+  await expect(page.getByText('Records (25)', { exact: true })).toBeVisible()
+  await page.getByText('ReadRecords', { exact: true }).first().click()
+  await expect(page.getByText('Records (25)', { exact: true })).toBeVisible()
+
+  await page.getByText('[0] Records', { exact: true }).click()
+  await expect(page.getByText(/Temporary, read-only result/)).toBeVisible()
+  await page.reload({ waitUntil: 'networkidle' })
+  await expect(page.getByText(/Temporary, read-only result/)).toHaveCount(0)
+  await expect(page.getByText('Records (25)', { exact: true })).toHaveCount(0)
+})

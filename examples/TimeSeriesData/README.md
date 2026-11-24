@@ -241,6 +241,19 @@ node --test operation-service/server.test.ts
 node operation-service/smoke.ts
 ```
 
+The UI repository includes `tests/integration/plugins/operation-results.pw.ts`
+for the complete operation flow, pagination (10/10/5), tree navigation and
+clearing results after reload. With the overlay and local UI running, execute
+from `aas-web-ui/`:
+
+```shell
+IT_DISABLE_WEBSERVER=true pnpm exec playwright test --project=integration-timeseries tests/integration/plugins/operation-results.pw.ts
+```
+
+Install the Playwright Chromium browser first, or use `IT_BROWSER_CHANNEL=chrome`
+to test with an installed Chrome. CI runs the service tests and API smoke check
+and uses the operation overlay with a UI image built from the current PR.
+
 When managing this optional stack, continue passing both Compose files (also
 for `stop` or `down`). The service intentionally exposes no host port and
 requires no dependencies beyond Node. Demo data is separate from InfluxDB.
