@@ -70,7 +70,7 @@ function mountOperation (operationObject: Record<string, any> = defaultOperation
       isEditable: true,
       operationObject,
     },
-    global: { stubs: shallowStubs },
+    global: { stubs: shallowStubs, plugins: [createPinia()] },
   })
 }
 
@@ -526,6 +526,7 @@ describe('Operation.vue', () => {
         },
       },
       global: {
+        plugins: [createPinia()],
         stubs: {
           'v-container': { template: '<div><slot /></div>' },
           'v-card': { template: '<div><slot /></div>' },

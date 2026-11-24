@@ -111,8 +111,17 @@
 
         <v-list class="px-4 pt-0 pb-5" nav>
           <!-- SubmodelELement Representation for different modelTypes -->
+          <template v-if="invocationResult">
+            <v-alert class="mt-4" density="compact" type="info" variant="tonal">
+              Result of the last invocation ({{ invocationResult.completedAt }}).
+              Temporary, read-only result; the stored definition is unchanged. Cleared on browser reload.
+            </v-alert>
+
+            <OperationResultValue :element="invocationResult.element" />
+          </template>
+
           <Submodel
-            v-if="submodelElementData.modelType === 'Submodel'"
+            v-else-if="submodelElementData.modelType === 'Submodel'"
             :submodel-object="submodelElementData"
           />
 
@@ -252,6 +261,7 @@
   import { useAASStore } from '@/store/AASDataStore'
   import { useInfrastructureStore } from '@/store/InfrastructureStore'
   import { useNavigationStore } from '@/store/NavigationStore'
+  import { useOperationResultStore } from '@/store/OperationResultStore'
 
   // Vue Router
   const route = useRoute()
@@ -260,6 +270,7 @@
   const navigationStore = useNavigationStore()
   const aasStore = useAASStore()
   const infrastructureStore = useInfrastructureStore()
+  const operationResultStore = useOperationResultStore()
 
   // Composables
   const { fetchCds } = useConceptDescriptionHandling()
@@ -281,6 +292,9 @@
   const autoSync = computed(() => navigationStore.getAutoSync)
   const editorMode = computed(() => ['AASEditor', 'SMEditor'].includes(route.name as string))
   const operationOwned = computed(() => submodelElementData.value?.persistence?.kind === 'operation')
+  const invocationResult = computed(() => operationOwned.value
+    ? operationResultStore.forNode(submodelElementData.value.persistence, submodelElementData.value)
+    : undefined)
   const pendingOperationValueUpdates = new Map<string, string>()
 
   const conceptDescriptionPanelTitleStyle = {

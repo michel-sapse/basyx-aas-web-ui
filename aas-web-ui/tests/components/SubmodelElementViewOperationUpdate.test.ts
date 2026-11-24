@@ -1,6 +1,9 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import OperationResultValue from '@/components/SubmodelElements/OperationResultValue.vue'
 import SubmodelElementView from '@/components/SubmodelElementView.vue'
+import { useOperationResultStore } from '@/store/OperationResultStore'
 import { decorateResolvedOperationNode } from '@/utils/AAS/OperationTreeUtils'
 
 const mocks = vi.hoisted(() => ({
@@ -75,6 +78,7 @@ describe('SubmodelElementView Operation-owned inline updates', () => {
     const slotStub = { template: '<div><slot /></div>' }
     const wrapper = mount(SubmodelElementView, {
       global: {
+        plugins: [createPinia()],
         stubs: {
           'v-container': slotStub,
           'v-card': slotStub,
@@ -97,5 +101,31 @@ describe('SubmodelElementView Operation-owned inline updates', () => {
     expect(mocks.mutateOperation).toHaveBeenCalledOnce()
     expect(mocks.dispatchSelectedNode).toHaveBeenCalledWith(expect.objectContaining({ value: 'true' }))
     expect(mocks.reloadTree).not.toHaveBeenCalled()
+  })
+
+  it('shows the last invocation for an output tree node without enabling persistence', async () => {
+    const pinia = createPinia()
+    const records = { modelType: 'SubmodelElementCollection', idShort: 'Records', value: [] }
+    mocks.selectedNode = decorateResolvedOperationNode(records, '/operations/readrecords', ['outputVariables', 0, 'value'])
+    useOperationResultStore(pinia).remember('/operations/readrecords', {
+      modelType: 'Operation', idShort: 'ReadRecords', outputVariables: [{ value: records }],
+    }, { outputArguments: [{ value: { ...records, value: [{ modelType: 'Property', idShort: 'Temperature', value: '20.5', valueType: 'xs:double' }] } }] })
+    const slotStub = { template: '<div><slot /></div>' }
+    const wrapper = mount(SubmodelElementView, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          'v-container': slotStub, 'v-card': slotStub, 'v-list': slotStub, 'v-alert': slotStub,
+          'v-divider': true, 'IdentificationElement': true, 'LastSync': true,
+          'OperationResultValue': true,
+        },
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('Result of the last invocation')
+    expect(wrapper.findComponent(OperationResultValue).props('element').value[0].value).toBe('20.5')
+    expect(mocks.selectedNode.value).toEqual([])
+    expect(mocks.mutateOperation).not.toHaveBeenCalled()
+    wrapper.unmount()
   })
 })

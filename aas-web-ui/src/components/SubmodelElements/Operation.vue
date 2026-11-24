@@ -1,6 +1,17 @@
 <template>
   <v-container class="pa-0" fluid>
     <v-card v-if="localOperationObject" class="mt-4" color="elevatedCard">
+      <v-alert
+        v-if="lastInvocation"
+        class="ma-3"
+        density="compact"
+        type="info"
+        variant="tonal"
+      >
+        Result of the last invocation ({{ lastInvocation.completedAt }}).
+        Temporary result; the stored definition is unchanged. Cleared on browser reload.
+      </v-alert>
+
       <!-- Operation with Variable(s) -->
       <v-list
         v-if="
@@ -138,9 +149,12 @@
 <script lang="ts" setup>
   import { useRequestHandling } from '@/composables/RequestHandling'
   import { useNavigationStore } from '@/store/NavigationStore'
+  import { useOperationResultStore } from '@/store/OperationResultStore'
+  import { canonicalTreeElementJson } from '@/utils/AAS/OperationTreeUtils'
 
   // Stores
   const navigationStore = useNavigationStore()
+  const operationResultStore = useOperationResultStore()
 
   // Composables
   const { postRequest, getRequest, errorHandler } = useRequestHandling()
@@ -169,6 +183,7 @@
   const loading = ref(false)
   const invokeAsynchronously = ref(true)
   const variablesEditable = computed(() => props.isEditable && props.invocationAvailable)
+  const lastInvocation = computed(() => operationResultStore.forOperation(props.operationObject.path, props.operationObject))
   let invocationController: AbortController | undefined
   let invocationGeneration = 0
 
@@ -207,9 +222,14 @@
     if (!localOperationObject.value.outputVariables) {
       localOperationObject.value.outputVariables = []
     }
+    const previous = operationResultStore.forOperation(props.operationObject.path, props.operationObject)
+    if (previous) {
+      applyResultArguments(previous.result)
+    }
   }
 
   function clearFields (): void {
+    operationResultStore.forget(props.operationObject.path)
     if (localOperationObject.value.inputVariables) {
       for (const variable of localOperationObject.value.inputVariables) {
         variable.value.value = null
@@ -232,6 +252,8 @@
   // Function to execute the Operation
   async function executeOperation (): Promise<void> {
     cancelInvocation()
+    operationResultStore.forget(props.operationObject.path)
+    localOperationObject.value.outputVariables = JSON.parse(canonicalTreeElementJson(props.operationObject.outputVariables ?? []))
 
     const generation = ++invocationGeneration
     const controller = new AbortController()
@@ -527,12 +549,8 @@
       return
     }
 
-    if (result.inoutputArguments) {
-      localOperationObject.value.inoutputVariables = result.inoutputArguments
-    }
-    if (result.outputArguments) {
-      localOperationObject.value.outputVariables = result.outputArguments
-    }
+    operationResultStore.remember(props.operationObject.path, props.operationObject, result)
+    applyResultArguments(result)
 
     navigationStore.dispatchSnackbar({
       status: true,
@@ -542,6 +560,15 @@
       text: 'Operation executed successfully.',
     })
     refreshWebUi()
+  }
+
+  function applyResultArguments (result: any): void {
+    if (result.inoutputArguments) {
+      localOperationObject.value.inoutputVariables = structuredClone(toRaw(result.inoutputArguments))
+    }
+    if (result.outputArguments) {
+      localOperationObject.value.outputVariables = structuredClone(toRaw(result.outputArguments))
+    }
   }
 
   function resolveTrustedLocation (location: string, responseUrl: string | undefined, requestUrl: string): string {

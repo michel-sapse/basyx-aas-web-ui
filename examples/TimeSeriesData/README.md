@@ -200,6 +200,14 @@ is demo data and must be checked against a real service response before claiming
 compatibility with a production backend. The smoke check also verifies that
 invoking `ReadRecords` leaves its persisted output definition unchanged.
 
+In the developed UI, the operation dialog displays nested output values in a
+paginated read-only table. Selecting `Records` in the tree also displays the
+last invocation result, explicitly labeled as temporary. Returning to the
+operation restores that result. The tree and JSON representation still refer
+to the stored definition; no result values are saved to the backend. Browser
+reload, switching infrastructures, or starting another invocation clears the
+temporary result. The `clear` action clears it as well.
+
 Check the service and actual synchronous/asynchronous AAS invocation with Node 24:
 
 ```shell
