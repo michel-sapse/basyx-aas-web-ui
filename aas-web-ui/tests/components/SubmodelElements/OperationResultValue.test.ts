@@ -26,6 +26,16 @@ describe('OperationResultValue metadata', () => {
     mocks.fetchSme.mockResolvedValue({ value: [{ idShort: 'Record', value: [temperature] }] })
     mocks.fetchCds.mockResolvedValue([{ unit: '°C' }])
   })
+  it('shows the total record count and updates it for subsequent and empty results', async () => {
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.get('.text-title-small').text()).toBe('Records (2)')
+    await wrapper.setProps({ element: { ...records, value: Array.from({ length: 25 }, (_, index) => ({ ...records.value[0], idShort: `Record${index + 1}` })) } })
+    expect(wrapper.get('.text-title-small').text()).toBe('Records (25)')
+    await wrapper.setProps({ element: { ...records, value: [] } })
+    expect(wrapper.get('.text-title-small').text()).toBe('Records (0)')
+    wrapper.unmount()
+  })
   it('resolves units once per column without changing the returned values', async () => {
     const before = structuredClone(records)
     const wrapper = render()

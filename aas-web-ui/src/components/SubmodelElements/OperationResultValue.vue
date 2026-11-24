@@ -1,6 +1,6 @@
 <template>
   <div class="pa-3">
-    <div class="text-title-small mb-2">{{ nameToDisplay(element) }}</div>
+    <div class="text-title-small mb-2">{{ resultTitle }}</div>
 
     <div v-if="metadataNotice" class="text-caption mb-2" role="status">{{ metadataNotice }}</div>
 
@@ -37,6 +37,13 @@
     { title: 'Type', key: 'valueType' },
   ]
   const rows = computed(() => operationResultRows(props.element))
+  const resultTitle = computed(() => {
+    const name = nameToDisplay(props.element)
+    if (props.element.idShort === 'Records' && Array.isArray(props.element.value)) {
+      return `${name} (${props.element.value.length})`
+    }
+    return name
+  })
   const recordTable = computed(() => operationRecordTable(props.element))
   const recordHeaders = computed(() => recordTable.value?.headers.map((header, index) => {
     if (index === 0) return header
