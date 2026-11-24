@@ -161,7 +161,7 @@ For developing the operation dialog, add the optional overlay:
 docker compose -f docker-compose.yaml -f docker-compose.operations.yaml up -d --build timeseries-operation-init
 ```
 
-This keeps the original AASX unchanged and adds `GetTimeSeries` to the existing
+This keeps the original AASX unchanged and adds `GetTimeSeries` and `ReadRecords` to the existing
 TimeSeries submodel using the repository API. Initialization does not overwrite
 an existing operation. The AAS Environment delegates invocation to a small
 TypeScript HTTP service; the browser still calls the normal AAS API.
@@ -188,6 +188,17 @@ claim of compliance with the complete IDTA time-series segment model.
 Results belong to the invocation and are not written back into the submodel.
 The unmodified UI may only show a summary for the Range and the result list;
 the example provides a reproducible backend for improving those renderers.
+
+`ReadRecords` uses two editable `Property<xs:dateTime>` arguments (`StartTime`
+and `EndTime`) instead of a Range, so it can be tested independently of changes
+to the Range input. Both are prefilled with the fixture interval. Its semantic
+ID is `https://admin-shell.io/idta/TimeSeries/ReadRecords/1/1`; the delegation
+target is local, never the production service. The output is a `Records`
+SubmodelElementCollection with named `Record1`, `Record2`, ... collections,
+each containing `Timestamp`, `Temperature` and `Unit`. The exact inner layout
+is demo data and must be checked against a real service response before claiming
+compatibility with a production backend. The smoke check also verifies that
+invoking `ReadRecords` leaves its persisted output definition unchanged.
 
 Check the service and actual synchronous/asynchronous AAS invocation with Node 24:
 

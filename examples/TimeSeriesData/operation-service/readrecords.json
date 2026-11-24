@@ -1,0 +1,12 @@
+{
+  "idShort": "ReadRecords",
+  "modelType": "Operation",
+  "description": [{ "language": "en", "text": "Local ReadRecords demo. Record layout is a fixture, not a captured production response." }],
+  "semanticId": { "type": "ExternalReference", "keys": [{ "type": "GlobalReference", "value": "https://admin-shell.io/idta/TimeSeries/ReadRecords/1/1" }] },
+  "inputVariables": [
+    { "value": { "modelType": "Property", "idShort": "StartTime", "valueType": "xs:dateTime", "value": "2026-11-24T09:00:00Z", "description": [{ "language": "en", "text": "Inclusive start time with explicit timezone." }] } },
+    { "value": { "modelType": "Property", "idShort": "EndTime", "valueType": "xs:dateTime", "value": "2026-11-24T09:10:00Z", "description": [{ "language": "en", "text": "Inclusive end time with explicit timezone." }] } }
+  ],
+  "outputVariables": [{ "value": { "idShort": "Records", "modelType": "SubmodelElementCollection", "value": [] } }],
+  "qualifiers": [{ "type": "invocationDelegation", "valueType": "xs:string", "value": "http://timeseries-operation:8080/readrecords" }]
+}

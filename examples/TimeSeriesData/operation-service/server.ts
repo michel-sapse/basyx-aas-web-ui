@@ -59,6 +59,27 @@ export function execute (input: unknown) {
   }
 }
 
+export function executeReadRecords (input: unknown) {
+  if (!Array.isArray(input)) {
+    throw new TypeError('Expected an array of AAS OperationVariables.')
+  }
+  const bound = (idShort: string) => {
+    const matches = input.filter(item => item?.value?.idShort === idShort)
+    if (matches.length !== 1 || matches[0].value.modelType !== 'Property' || matches[0].value.valueType !== 'xs:dateTime') {
+      throw new Error(`Exactly one ${idShort} Property<xs:dateTime> is required.`)
+    }
+    return matches[0].value.value
+  }
+  const result = execute([{ value: { idShort: 'Timespan', modelType: 'Range', valueType: 'xs:dateTime', min: bound('StartTime'), max: bound('EndTime') } }])
+  return {
+    executionState: 'Completed', success: true, inoutputArguments: [],
+    outputArguments: [{ value: {
+      idShort: 'Records', modelType: 'SubmodelElementCollection',
+      value: result.outputArguments?.[0].value.value.map((record, index) => ({ ...record, idShort: `Record${index + 1}` })) ?? [],
+    } }],
+  }
+}
+
 export function createOperationServer () {
   return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json')
@@ -66,7 +87,7 @@ export function createOperationServer () {
       response.end(JSON.stringify({ status: 'ok' }))
       return
     }
-    if (request.method !== 'POST' || request.url !== '/timeseries') {
+    if (request.method !== 'POST' || !['/timeseries', '/readrecords'].includes(request.url ?? '')) {
       response.writeHead(404).end(JSON.stringify({ message: 'Not found' }))
       return
     }
@@ -79,7 +100,8 @@ export function createOperationServer () {
           return
         }
       }
-      response.end(JSON.stringify(execute(JSON.parse(body))))
+      const executeOperation = request.url === '/readrecords' ? executeReadRecords : execute
+      response.end(JSON.stringify(executeOperation(JSON.parse(body))))
     } catch (error) {
       response.writeHead(400).end(JSON.stringify({ message: error instanceof Error ? error.message : 'Invalid request' }))
     }

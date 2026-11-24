@@ -54,3 +54,19 @@ for (let attempt = 0; attempt < 100; attempt++) {
 }
 assert.ok(completed, 'Async operation did not complete within 10 seconds')
 console.log('PASS: real AAS backend → delegated service → sync/async results, empty, error and invalid interval')
+
+const recordsOperation = JSON.parse(await readFile(new URL('readrecords.json', import.meta.url), 'utf8'))
+const recordsUrl = `${endpoint}/submodels/${id}/submodel-elements/ReadRecords`
+const recordsResponse = await fetch(`${recordsUrl}/invoke`, {
+  method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ inputArguments: recordsOperation.inputVariables, inoutputArguments: [], clientTimeoutDuration: 'PT10S' }),
+})
+assert.equal(recordsResponse.status, 200, await recordsResponse.clone().text())
+const recordsResult = await recordsResponse.json()
+assert.equal(recordsResult.outputArguments[0].value.idShort, 'Records')
+assert.equal(recordsResult.outputArguments[0].value.modelType, 'SubmodelElementCollection')
+assert.equal(recordsResult.outputArguments[0].value.value.length, 3)
+// Invocation results must not mutate the saved operation definition.
+const persisted = await (await fetch(recordsUrl)).json()
+assert.deepEqual(persisted.outputVariables[0].value.value, [])
+console.log('PASS: ReadRecords property inputs → Records collection, without persistence')

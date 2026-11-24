@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createOperationServer, execute } from './server.ts'
+import { createOperationServer, execute, executeReadRecords } from './server.ts'
 
 function input (min = '2026-11-24T09:00:00Z', max = '2026-11-24T09:10:00Z') {
   return [{ value: { modelType: 'Range', idShort: 'Timespan', valueType: 'xs:dateTime', min, max } }]
@@ -28,6 +28,25 @@ test('exposes a reproducible operation failure', () => {
   const args = [...input(), { value: { idShort: 'SimulateError', value: 'true' } }]
   assert.equal(execute(args).success, false)
 })
+test('ReadRecords accepts the two property inputs and returns a named Records collection', () => {
+  const args = [
+    { value: { idShort: 'StartTime', modelType: 'Property', valueType: 'xs:dateTime', value: '2026-11-24T10:00:00+01:00' } },
+    { value: { idShort: 'EndTime', modelType: 'Property', valueType: 'xs:dateTime', value: '2026-11-24T09:05:00Z' } },
+  ]
+  const result = executeReadRecords(args)
+  expectRecords(result, 2)
+  assert.throws(() => executeReadRecords(args.slice(0, 1)))
+  args[0].value.value = '2026-11-25T00:00:00Z'
+  assert.throws(() => executeReadRecords(args))
+  args[1].value.value = '2026-11-26T00:00:00Z'
+  expectRecords(executeReadRecords(args), 0)
+})
+
+function expectRecords (result: ReturnType<typeof executeReadRecords>, count: number) {
+  assert.equal(result.outputArguments[0].value.idShort, 'Records')
+  assert.equal(result.outputArguments[0].value.modelType, 'SubmodelElementCollection')
+  assert.equal(result.outputArguments[0].value.value.length, count)
+}
 test('HTTP service handles health, successful calls, malformed JSON and unknown routes', async () => {
   const server = createOperationServer()
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
