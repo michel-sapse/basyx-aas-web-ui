@@ -234,6 +234,24 @@ or conflicting semantic ID. Missing metadata leaves the values visible and
 shows a notice. Metadata lookup currently expects `Metadata` and accepts either
 the Record semantic ID or `Record` as the metadata collection name.
 
+### Record table controls
+
+- Search covers all loaded rows and columns, including hidden columns, without
+  case sensitivity. It is combined with the applied filters.
+- Filter conditions are combined with AND and take effect on **Apply filters**.
+  Numbers and date-times use typed comparisons; time filters require a timezone.
+- **Columns** selects the visible columns; at least one stays visible. These
+  settings are temporary and reset when the table is recreated or its schema changes.
+- Column headers support sorting (including keyboard Enter). Numeric values are
+  right-aligned, units appear below the name and types appear below the table.
+  Timestamp strings are preserved; the first date-time column is initially sorted ascending.
+- **Export CSV** offers all loaded rows, filtered rows or the current page, with
+  visible or all columns and optional headers. Exports follow the current sort,
+  use comma-separated UTF-8 with BOM and CRLF, and quote cell contents. Text that
+  could be interpreted as a spreadsheet formula is prefixed with an apostrophe.
+- Search, filter and sort changes reset pagination to the first page. The title
+  badge counts all loaded records; the footer counts the matching rows.
+
 Check the service and actual synchronous/asynchronous AAS invocation with Node 24:
 
 ```shell

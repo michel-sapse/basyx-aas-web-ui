@@ -17,7 +17,10 @@ const records = { modelType: 'SubmodelElementCollection', idShort: 'Records', va
 function render () {
   return mount(OperationResultValue, {
     props: { element: records, operationPath: 'http://localhost:8081/submodels/id/submodel-elements/ReadRecords' },
-    global: { stubs: { 'v-data-table': { props: ['headers', 'items'], template: '<div>{{ headers }} {{ items }}</div>' } } },
+    global: { stubs: {
+      'v-data-table': { props: ['headers', 'items'], template: '<div>{{ headers }} {{ items }}</div>' },
+      'OperationRecordsTable': { props: ['title', 'rows', 'columns'], template: '<div><div class="text-title-small">{{ title }} ({{ rows.length }})</div>{{ columns }} {{ rows }}</div>' },
+    } },
   })
 }
 describe('OperationResultValue metadata', () => {
@@ -42,7 +45,8 @@ describe('OperationResultValue metadata', () => {
     await flushPromises()
     expect(mocks.fetchSme).toHaveBeenCalledWith('http://localhost:8081/submodels/id/submodel-elements/Metadata')
     expect(mocks.fetchCds).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('Temperature [°C] (xs:integer)')
+    expect(wrapper.text()).toContain('°C')
+    expect(wrapper.text()).toContain('xs:integer')
     expect(records).toEqual(before)
     wrapper.unmount()
   })
