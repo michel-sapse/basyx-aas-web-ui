@@ -230,6 +230,7 @@
     validateAutoRefreshSelection,
   } from '@/components/Plugins/Submodels/TimeSeries/autoRefresh'
   import { findExternalSegmentData } from '@/components/Plugins/Submodels/TimeSeries/externalSegment'
+  import { readRecordsDatasets, readRecordsOperationPath, readRecordsRequest } from '@/components/Plugins/Submodels/TimeSeries/readRecords'
   import {
     cloneTimeRangeSelection,
     DEFAULT_TIME_RANGE,
@@ -373,6 +374,8 @@
   watch([selectedSegment, timeVariable, yVariables], () => {
     invalidatePendingRequest()
   }, { flush: 'sync' })
+
+  watch(timeRangeSelection, invalidatePendingRequest, { deep: true, flush: 'sync' })
 
   onMounted(() => {
     initComponent()
@@ -737,6 +740,12 @@
       return
     }
 
+    const operationPath = readRecordsOperationPath(props.submodelElementData, selectedSegment.value)
+    if (operationPath) {
+      void fetchOperationRecords(operationPath, range, selection)
+      return
+    }
+
     // get the Endpoint from the selected Segment
     const endpoint = selectedSegment.value.value.find((smc: any) => checkIdShort(smc, 'Endpoint'))?.value
     // get the query from the selected Segment
@@ -776,6 +785,30 @@
         }
       })
       .finally(() => finishAsyncRequest(requestId))
+  }
+
+  async function fetchOperationRecords (path: string, range: ResolvedTimeRange, selection: TimeRangeSelection): Promise<void> {
+    const fields = yVariables.value.map((variable: any) => variable.idShort)
+    if (fields.length === 0) {
+      return
+    }
+    const requestId = beginAsyncRequest()
+    const headers = new Headers({ 'Content-Type': 'application/json', 'Accept': 'application/json' })
+    try {
+      const response = await postRequest(`${path}/invoke`, readRecordsRequest(range, fields), headers, 'reading time-series records', false)
+      if (isCurrentRequest(requestId) && response.success) {
+        applyTimeRange(readRecordsDatasets(response.data, fields), selection, { ...range, stopExclusive: true })
+      }
+    } catch (error) {
+      if (isCurrentRequest(requestId)) {
+        navigationStore.dispatchSnackbar({
+          status: true, timeout: 6000, color: 'error', btnColor: 'buttonText',
+          text: error instanceof Error ? error.message : 'Reading time-series records failed.',
+        })
+      }
+    } finally {
+      finishAsyncRequest(requestId)
+    }
   }
 
   function convertInfluxCSVtoArray (

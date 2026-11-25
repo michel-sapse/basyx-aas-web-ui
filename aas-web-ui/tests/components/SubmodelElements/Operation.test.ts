@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { dateTimeArgument, DEFAULT_END_TIME, DEFAULT_START_TIME } from '@/components/Plugins/Submodels/TimeSeries/fixedOffsetRange'
 import Operation from '@/components/SubmodelElements/Operation.vue'
 
 const postRequestMock = vi.fn()
@@ -48,6 +49,8 @@ const shallowStubs = {
   'ReferenceElement': true,
   'SubmodelElementSummary': true,
   'DescriptionElement': true,
+  'TimespanRangeInput': true,
+  'ReadRecordsRangePicker': true,
 }
 
 function acceptedResponse (location = '/operation-status/handle-1') {
@@ -61,17 +64,67 @@ function acceptedResponse (location = '/operation-status/handle-1') {
   }
 }
 
-function mountOperation (operationObject: Record<string, any> = defaultOperation) {
+function mountOperation (operationObject: Record<string, any> = defaultOperation, renderSlots = false) {
   return mount(Operation, {
     props: {
       isEditable: true,
       operationObject,
     },
-    global: { stubs: shallowStubs },
+    global: { stubs: {
+      ...shallowStubs,
+      ...(renderSlots ? Object.fromEntries(['v-container', 'v-card', 'v-list'].map(name => [name, { template: '<div><slot /></div>' }])) : {}),
+    } },
   })
 }
 
 describe('Operation.vue', () => {
+  function readRecordsOperation () {
+    return {
+      ...defaultOperation, idShort: 'ReadRecords',
+      inputVariables: [
+        dateTimeArgument('StartTime', DEFAULT_START_TIME),
+        dateTimeArgument('EndTime', DEFAULT_END_TIME),
+        { value: { idShort: 'Fields', modelType: 'Property', valueType: 'xs:string', value: '["rpm"]' } },
+      ],
+    }
+  }
+
+  it('groups StartTime/EndTime and prevents execution with an incomplete draft', async () => {
+    const operation = readRecordsOperation()
+    const wrapper = mountOperation(operation, true)
+    await wrapper.vm.$nextTick()
+    const vm = wrapper.vm as any
+    const picker = wrapper.getComponent({ name: 'ReadRecordsRangePicker' })
+    expect(wrapper.findAllComponents({ name: 'Property' })).toHaveLength(1)
+    await vm.executeOperation()
+    expect(postRequestMock).not.toHaveBeenCalled()
+    const bounds = { start: '2026-11-19T11:00:43.815Z', end: '2026-11-25T11:00:43.815Z' }
+    picker.vm.$emit('update-range', bounds)
+    picker.vm.$emit('editing', true)
+    await vm.executeOperation()
+    expect(postRequestMock).not.toHaveBeenCalled()
+    picker.vm.$emit('editing', false)
+    await vm.executeOperation()
+    const args = JSON.parse(postRequestMock.mock.calls[0][1]).inputArguments
+    expect(args.map((arg: any) => arg.value.idShort)).toEqual(['StartTime', 'EndTime', 'Fields'])
+    expect(args[0].value).toMatchObject({ modelType: 'Property', value: bounds.start })
+    expect(args[1].value).toMatchObject({ modelType: 'Property', value: bounds.end })
+    expect(operation.inputVariables[0]!.value.value).toBe(DEFAULT_START_TIME)
+    vm.clearFields()
+    expect(vm.localOperationObject.inputVariables[0].value.value).toBeNull()
+    expect(vm.localOperationObject.inputVariables[1].value.value).toBeNull()
+    expect(vm.rangeIncomplete).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('allows range argument selection in the viewer without repository editing', async () => {
+    const wrapper = mountOperation(readRecordsOperation())
+    await wrapper.setProps({ isEditable: false })
+    expect((wrapper.vm as any).variablesEditable).toBe(true)
+    await wrapper.setProps({ invocationAvailable: false })
+    expect((wrapper.vm as any).variablesEditable).toBe(false)
+    wrapper.unmount()
+  })
   beforeEach(() => {
     postRequestMock.mockReset()
     getRequestMock.mockReset()

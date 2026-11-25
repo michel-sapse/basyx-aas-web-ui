@@ -18,6 +18,7 @@ export type TimeRangeSelection
     mode: 'absolute'
     start: string
     stop: string
+    calendar?: boolean
   }
 
 export type ResolvedTimeRange = {
@@ -27,6 +28,7 @@ export type ResolvedTimeRange = {
   startMs: number
   stopMs: number
   durationMs: number
+  stopExclusive?: boolean
 }
 
 export type TimeSeriesDataPoint = {
@@ -107,15 +109,15 @@ export function validateTimeRangeSelection (selection: unknown): string | null {
     return 'Enter both a start and an end date.'
   }
 
-  const startDate = parseAbsoluteDate(candidate.start)
-  const stopDate = parseAbsoluteDate(candidate.stop)
+  const startDate = candidate.calendar ? parseCalendarDate(candidate.start) : parseAbsoluteDate(candidate.start)
+  const stopDate = candidate.calendar ? parseCalendarDate(candidate.stop) : parseAbsoluteDate(candidate.stop)
   if (!startDate || !stopDate) {
     return 'Enter valid start and end dates.'
   }
 
   const startMs = startDate.getTime()
   const stopMs = stopDate.getTime()
-  if (startMs >= stopMs) {
+  if (!candidate.calendar && startMs >= stopMs) {
     return 'The start date must be before the end date.'
   }
 
@@ -135,8 +137,16 @@ export function resolveTimeRange (
   let stopDate: Date
 
   if (selection.mode === 'absolute') {
-    startDate = parseAbsoluteDate(selection.start) as Date
-    stopDate = parseAbsoluteDate(selection.stop) as Date
+    if (selection.calendar) {
+      const dates = [parseCalendarDate(selection.start)!, parseCalendarDate(selection.stop)!]
+        .toSorted((a, b) => a.getTime() - b.getTime())
+      startDate = dates[0]!
+      stopDate = dates[1]!
+      stopDate.setDate(stopDate.getDate() + 1)
+    } else {
+      startDate = parseAbsoluteDate(selection.start) as Date
+      stopDate = parseAbsoluteDate(selection.stop) as Date
+    }
   } else {
     stopDate = new Date(relativeStop)
     startDate = subtractRelativeTime(stopDate, selection.value, selection.unit)
@@ -157,6 +167,7 @@ export function resolveTimeRange (
     startMs,
     stopMs,
     durationMs,
+    ...(selection.mode === 'absolute' && selection.calendar ? { stopExclusive: true } : {}),
   }
 }
 
@@ -181,7 +192,8 @@ export function filterTimeSeriesData<T extends TimeSeriesDataPoint> (
 ): T[][] {
   return datasets.map(dataset => dataset.filter(point => {
     const timestamp = new Date(point.time).getTime()
-    return Number.isFinite(timestamp) && timestamp >= range.startMs && timestamp <= range.stopMs
+    return Number.isFinite(timestamp) && timestamp >= range.startMs
+      && (range.stopExclusive ? timestamp < range.stopMs : timestamp <= range.stopMs)
   }))
 }
 
@@ -210,7 +222,22 @@ export function toApexTimeRange (range: ResolvedTimeRange | null): {
   }
 }
 
-function parseAbsoluteDate (value: string): Date | null {
+export function calendarDateKey (date: Date): string {
+  return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+export function parseCalendarDate (value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null
+  }
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(0)
+  date.setFullYear(year!, month! - 1, day!)
+  date.setHours(0, 0, 0, 0)
+  return calendarDateKey(date) === value ? date : null
+}
+
+export function parseAbsoluteDate (value: string): Date | null {
   const localMatch = LOCAL_DATE_TIME_PATTERN.exec(value)
   if (localMatch) {
     const [, yearText, monthText, dayText, hourText, minuteText, secondText = '0', fractionText = '0'] = localMatch

@@ -13,6 +13,52 @@ describe('Time Series time-range utilities', () => {
   const stop = new Date('2026-05-13T19:16:00.000Z')
 
   it.each([
+    ['2026-11-05', '2026-11-09'],
+    ['2026-11-09', '2026-11-05'],
+  ])('resolves calendar dates in either order', (start, stop) => {
+    const range = resolveTimeRange({ mode: 'absolute', start, stop, calendar: true })
+    expect(range.start).toBe(new Date(2026, 10, 5).toISOString())
+    expect(range.stop).toBe(new Date(2026, 10, 10).toISOString())
+    expect(range.stopExclusive).toBe(true)
+  })
+
+  it.each([
+    ['2026-11-05', '2026-11-05', 1],
+    ['2026-12-31', '2027-01-01', 2],
+    ['2026-01-31', '2026-02-01', 2],
+  ])('includes entire days across calendar boundaries', (start, stop, days) => {
+    const range = resolveTimeRange({ mode: 'absolute', start, stop, calendar: true })
+    expect(range.durationMs).toBe(days * 86_400_000)
+    expect(filterTimeSeriesData([[
+      { time: range.start, value: 1 },
+      { time: new Date(range.stopMs - 1).toISOString(), value: 2 },
+      { time: range.stop, value: 3 },
+    ]], range)).toEqual([[
+      { time: range.start, value: 1 },
+      { time: new Date(range.stopMs - 1).toISOString(), value: 2 },
+    ]])
+  })
+
+  it.each([['2026-03-29', 23], ['2026-10-25', 25]])('uses local midnight across DST on %s', (date, hours) => {
+    const originalTimezone = process.env.TZ
+    process.env.TZ = 'Europe/Berlin'
+    try {
+      expect(resolveTimeRange({ mode: 'absolute', start: date, stop: date, calendar: true }).durationMs).toBe(hours * 3_600_000)
+    } finally {
+      if (originalTimezone === undefined) {
+        delete process.env.TZ
+      } else {
+        process.env.TZ = originalTimezone
+      }
+    }
+  })
+
+  it('rejects unfinished and invalid calendar selections', () => {
+    expect(validateTimeRangeSelection({ mode: 'absolute', start: '2026-11-05', stop: '', calendar: true })).toContain('both')
+    expect(validateTimeRangeSelection({ mode: 'absolute', start: '2026-02-30', stop: '2026-03-01', calendar: true })).toContain('valid start')
+  })
+
+  it.each([
     ['milliseconds', 500, 500],
     ['seconds', 2, 2000],
     ['minutes', 3, 180_000],
