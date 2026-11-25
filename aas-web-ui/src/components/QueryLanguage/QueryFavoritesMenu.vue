@@ -17,7 +17,7 @@
   <v-list-item
     v-for="entry in entries"
     :key="entry.favorite.id"
-    :aria-label="`Run ${entry.favorite.name}`"
+    :aria-label="entry.reason ? `${entry.favorite.name}, unavailable: ${entry.reason}` : `Run ${entry.favorite.name}`"
     :link="!entry.reason"
     prepend-icon="mdi-star-outline"
     :subtitle="entry.reason || entry.targetLabel"

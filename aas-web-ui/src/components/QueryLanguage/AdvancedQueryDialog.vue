@@ -30,13 +30,16 @@
           <div class="text-caption text-break">{{ endpoint }}</div>
         </v-alert>
 
-        <v-text-field
-          v-if="favoritesEnabled && favoriteId"
-          v-model="favoriteName"
-          density="compact"
-          label="Favorite name"
-          required
-          variant="outlined"
+        <QueryFavoriteActions
+          v-if="favoritesEnabled && target !== 'submodel-repository'"
+          :active="dialogOpen"
+          class="mb-8"
+          :favorite-id="favoriteId"
+          :name="favoriteName"
+          :query="schemaValidation.isValid && contextValidation.isValid ? contextValidation.query : undefined"
+          :target="target"
+          @saved="handleFavoriteSaved"
+          @update:name="favoriteName = $event"
         />
 
         <v-alert
@@ -49,15 +52,9 @@
           Querying is unavailable for this target on the selected infrastructure.
         </v-alert>
 
-        <QueryLanguageEditor
-          v-model="queryText"
-          :height="mobile ? 'calc(100svh - 310px)' : 'min(55vh, 520px)'"
-          @validation-change="schemaValidation = $event"
-        />
-
         <v-alert
           v-if="schemaValidation.isValid && !contextValidation.isValid"
-          class="mt-2"
+          class="mb-4"
           density="compact"
           role="alert"
           type="error"
@@ -66,15 +63,10 @@
           {{ contextValidation.message }}
         </v-alert>
 
-        <QueryFavoriteActions
-          v-if="favoritesEnabled && target !== 'submodel-repository'"
-          :active="dialogOpen"
-          class="mt-2"
-          :favorite-id="favoriteId"
-          :name="favoriteName"
-          :query="schemaValidation.isValid && favoriteValidation.isValid ? favoriteValidation.query : undefined"
-          :target="target"
-          @saved="handleFavoriteSaved"
+        <QueryLanguageEditor
+          v-model="queryText"
+          :height="mobile ? 'calc(100svh - 310px)' : 'min(55vh, 520px)'"
+          @validation-change="schemaValidation = $event"
         />
       </v-card-text>
 
@@ -147,11 +139,6 @@
     props.query,
     props.target,
     props.infrastructureTemplate,
-  ))
-  const favoriteValidation = computed(() => validateQueryForTarget(
-    props.query,
-    props.target,
-    props.favoriteId ? 'mono-all' : props.infrastructureTemplate,
   ))
   const canExecute = computed(() => props.executionEnabled !== false && schemaValidation.value.isValid && contextValidation.value.isValid && !props.loading)
   const targetLabel = computed(() => {

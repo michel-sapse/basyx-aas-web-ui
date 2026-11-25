@@ -1,25 +1,61 @@
 <template>
-  <div class="d-flex align-center flex-wrap ga-2">
-    <v-btn
-      :disabled="!query || saving"
-      prepend-icon="mdi-star-plus-outline"
-      text="Save as favorite"
-      variant="text"
-      @click="openSaveDialog"
-    />
+  <div>
+    <div class="text-body-2 font-weight-medium mb-2">Saved query</div>
 
-    <v-btn
-      v-if="favorite"
-      :disabled="!query || !favoriteName.trim() || saving"
-      :loading="saving"
-      prepend-icon="mdi-star-outline"
-      text="Update favorite"
-      variant="text"
-      @click="save(favoriteName, favorite.id)"
-    />
+    <v-row align="center" class="ga-3" no-gutters>
+      <v-col cols="12" md="5">
+        <v-text-field
+          aria-label="Favorite name"
+          autofocus
+          density="compact"
+          :disabled="saving"
+          hide-details
+          :model-value="favoriteName || null"
+          placeholder="Enter a favorite name…"
+          prepend-inner-icon="mdi-star-outline"
+          variant="outlined"
+          @keydown.enter.prevent="save(favoriteName, favorite?.id)"
+          @update:model-value="emit('update:name', $event ?? '')"
+        />
+      </v-col>
+
+      <v-col cols="auto">
+        <div class="d-flex flex-wrap ga-3">
+          <v-btn
+            v-if="favorite"
+            border
+            class="text-body-1 font-weight-medium"
+            color="card"
+            :disabled="!query || !favoriteName.trim() || saving"
+            height="44"
+            :loading="savingAction === 'update'"
+            rounded="sm"
+            text="Update favorite"
+            variant="flat"
+            width="168"
+            @click="save(favoriteName, favorite.id)"
+          />
+
+          <v-btn
+            border
+            class="text-body-1 font-weight-medium"
+            color="card"
+            :disabled="!query || !favoriteName.trim() || saving"
+            height="44"
+            :loading="savingAction === 'new'"
+            rounded="sm"
+            :text="favorite ? 'Save as new favorite' : 'Save as favorite'"
+            variant="flat"
+            width="208"
+            @click="save(favoriteName)"
+          />
+        </div>
+      </v-col>
+    </v-row>
 
     <v-alert
-      v-if="error && !nameDialog"
+      v-if="error"
+      class="mt-2"
       density="compact"
       role="alert"
       type="error"
@@ -28,15 +64,6 @@
       {{ error }}
     </v-alert>
   </div>
-
-  <QueryFavoriteNameDialog
-    v-model="nameDialog"
-    :error="error"
-    :initial-name="favoriteName"
-    :loading="saving"
-    title="Save query as favorite"
-    @save="save($event)"
-  />
 </template>
 
 <script setup lang="ts">
@@ -51,41 +78,39 @@
     name?: string
     active?: boolean
   }>()
-  const emit = defineEmits<{ saved: [id: string, name: string] }>()
+  const emit = defineEmits<{
+    'saved': [id: string, name: string]
+    'update:name': [name: string]
+  }>()
 
   const favoritesStore = useQueryFavoritesStore()
   const navigationStore = useNavigationStore()
-  const nameDialog = ref(false)
-  const saving = ref(false)
+  const savingAction = ref<'update' | 'new'>()
   const error = ref('')
 
+  const saving = computed(() => savingAction.value !== undefined)
   const favorite = computed(() => favoritesStore.favorites.find(item =>
     item.id === props.favoriteId && item.target === props.target,
   ))
-  const favoriteName = computed(() => favorite.value ? props.name ?? favorite.value.name : '')
+  const favoriteName = computed(() => props.name ?? favorite.value?.name ?? '')
 
-  watch([() => props.active, () => props.favoriteId], () => {
+  watch([() => props.active, () => props.favoriteId, () => props.name], () => {
     error.value = ''
   })
 
-  function openSaveDialog (): void {
-    error.value = ''
-    nameDialog.value = true
-  }
-
   async function save (name: string, id?: string): Promise<void> {
-    if (!props.query || saving.value) return
+    if (!props.query || !name.trim() || saving.value) return
+    const savedName = name.trim()
     error.value = ''
-    saving.value = true
+    savingAction.value = id ? 'update' : 'new'
     try {
-      const savedId = await favoritesStore.save(name, props.target, props.query, id)
-      nameDialog.value = false
-      emit('saved', savedId, name.trim())
-      navigationStore.dispatchSnackbar({ status: true, color: 'success', text: `Query favorite "${name}" saved.` })
+      const savedId = await favoritesStore.save(savedName, props.target, props.query, id)
+      emit('saved', savedId, savedName)
+      navigationStore.dispatchSnackbar({ status: true, color: 'success', text: `Query favorite "${savedName}" saved.` })
     } catch (error_) {
       error.value = error_ instanceof Error ? error_.message : 'The query favorite could not be saved.'
     } finally {
-      saving.value = false
+      savingAction.value = undefined
     }
   }
 </script>

@@ -142,7 +142,6 @@ declare module 'vue' {
     QualifierElement: typeof import('./components/UIComponents/QualifierElement.vue')['default']
     QualifierInput: typeof import('./components/EditorComponents/InputTypes/QualifierInput.vue')['default']
     QueryFavoriteActions: typeof import('./components/QueryLanguage/QueryFavoriteActions.vue')['default']
-    QueryFavoriteNameDialog: typeof import('./components/QueryLanguage/QueryFavoriteNameDialog.vue')['default']
     QueryFavoritesMenu: typeof import('./components/QueryLanguage/QueryFavoritesMenu.vue')['default']
     QueryLanguageEditor: typeof import('./components/QueryLanguage/QueryLanguageEditor.vue')['default']
     QuerySearchField: typeof import('./components/QueryLanguage/QuerySearchField.vue')['default']

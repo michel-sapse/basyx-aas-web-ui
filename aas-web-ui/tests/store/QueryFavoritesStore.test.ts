@@ -129,6 +129,15 @@ describe('query favorites persistence', () => {
     expect(store.loadError).toBe('')
   })
 
+  it('wraps storage errors even when their message resembles a deleted-favorite error', async () => {
+    const store = useQueryFavoritesStore()
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('This query favorite storage write failed.')
+    })
+    await expect(store.save('Motors', 'aas-repository', query)).rejects.toThrow('could not be saved')
+    expect(store.favorites).toEqual([])
+  })
+
   it('does not recreate a favorite deleted in another tab during an update', async () => {
     const store = useQueryFavoritesStore()
     const id = await store.save('Original', 'aas-repository', query)
