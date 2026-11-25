@@ -17,7 +17,7 @@
           @advance="controls[index + 1]?.focus()"
           @cancel="emit('cancel')"
           @confirm="emit('confirm')"
-          @update:model-value="emit('update:point', { ...point, [part.key]: $event })"
+          @update:model-value="emit('part-change', part.key, $event)"
         />
 
         <span v-if="index < 3" aria-hidden="true" class="range-time-separator">{{ index === 2 ? '.' : ':' }}</span>
@@ -32,7 +32,7 @@
   import type { TimePoint } from './fixedOffsetRange'
 
   const props = defineProps<{ point: TimePoint, label: string, disabled?: boolean, error?: string }>()
-  const emit = defineEmits<{ 'update:point': [point: TimePoint], 'confirm': [], 'cancel': [] }>()
+  const emit = defineEmits<{ 'part-change': [field: keyof TimePoint, value: string], 'confirm': [], 'cancel': [] }>()
   const controls = ref<Array<{ focus: () => void } | null>>([])
   const errorId = useId()
   const prefix = computed(() => props.label.startsWith('Start') ? 'Start' : 'End')

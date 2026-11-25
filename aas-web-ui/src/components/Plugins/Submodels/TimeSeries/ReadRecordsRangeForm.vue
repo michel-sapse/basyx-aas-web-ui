@@ -85,7 +85,7 @@
           :point="start"
           @cancel="emit('cancel')"
           @confirm="emit('confirm')"
-          @update:point="emit('point-change', 'start', $event)"
+          @part-change="(field: keyof TimePoint, value: string) => emit('point-change', 'start', field, value)"
         />
 
         <RangeTimeRow
@@ -96,7 +96,7 @@
           :point="end"
           @cancel="emit('cancel')"
           @confirm="emit('confirm')"
-          @update:point="emit('point-change', 'end', $event)"
+          @part-change="(field: keyof TimePoint, value: string) => emit('point-change', 'end', field, value)"
         />
       </div>
 
@@ -110,7 +110,7 @@
 
   const props = defineProps<{ start: TimePoint, end: TimePoint, offset: number, preset: QuickRange, activeEndpoint: 'start' | 'end', disabled?: boolean, error?: string }>()
   const emit = defineEmits<{
-    'point-change': [endpoint: 'start' | 'end', point: TimePoint]
+    'point-change': [endpoint: 'start' | 'end', field: keyof TimePoint, value: string]
     'activate': [endpoint: 'start' | 'end']
     'date': [date: string]
     'preset': [preset: QuickRange]
@@ -149,7 +149,7 @@
 
   function updateDate (endpoint: 'start' | 'end', event: Event): void {
     const value = (event.target as HTMLInputElement).value
-    emit('point-change', endpoint, { ...point(endpoint), date: parseDateInput(value) || value })
+    emit('point-change', endpoint, 'date', parseDateInput(value) || value)
   }
 </script>
 
