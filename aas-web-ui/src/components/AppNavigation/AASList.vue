@@ -45,7 +45,16 @@
               @submit="submitSearch"
               @update:model-value="handleSearchInput"
               @update:search-scope="changeAasSearchScope"
-            />
+            >
+              <template v-if="!isMobile" #favorites="{ close }">
+                <QueryFavoritesMenu
+                  :available-targets="availableFavoriteTargets"
+                  :infrastructure-template="selectedInfrastructureTemplate"
+                  @edit="loadQueryFavorite($event, 'edit'); close()"
+                  @select="loadQueryFavorite($event); close()"
+                />
+              </template>
+            </QuerySearchField>
           </div>
 
           <!-- QR Scanner -->
@@ -415,23 +424,28 @@
   <ResourceAccessDialog v-model="accessDialog" :target="accessTarget" />
 
   <AdvancedQueryDialog
-    v-if="queryAvailable && !isMobile"
+    v-if="!isMobile"
     v-model="advancedQueryDialog"
-    :endpoint="activeQueryBaseUrl"
+    v-model:favorite-name="advancedFavoriteName"
+    :endpoint="advancedQueryTarget === 'aas-registry' ? aasRegistryURL : aasRepoURL"
+    :execution-enabled="availableFavoriteTargets.includes(advancedQueryTarget)"
+    :favorite-id="advancedFavoriteId"
+    favorites-enabled
     :infrastructure-template="selectedInfrastructureTemplate"
     :loading="querySearch.loading.value"
     :mobile="isMobile"
     :query="advancedQueryDraft"
-    :target="aasQueryTarget"
+    :target="advancedQueryTarget"
     title="Advanced AAS query"
     @execute="executeAdvancedQuery"
     @reset="resetAdvancedQueryDraft"
+    @update:favorite-id="advancedFavoriteId = $event"
     @update:query="advancedQueryDraft = $event"
   />
 </template>
 
 <script lang="ts" setup>
-  import type { AasSearchScope, QueryLanguageQuery, QueryTarget } from '@/types/QueryLanguage'
+  import type { AasSearchScope, QueryFavorite, QueryLanguageQuery, QueryTarget } from '@/types/QueryLanguage'
   import type { ResourceAccessTarget } from '@/types/ResourceAccess'
   import type { ComponentPublicInstance, Ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
@@ -508,6 +522,9 @@
   const listLoading = computed(() => isLoadingInitialPage.value) // Variable to store if the AAS List is loading
   const advancedQueryDialog = ref(false)
   const advancedQueryDraft = ref('')
+  const advancedFavoriteId = ref<string>()
+  const advancedFavoriteName = ref('')
+  const favoriteQueryTarget = ref<QueryFavorite['target']>()
   const deleteDialog = ref(false) // Variable to store if the Delete Dialog should be shown
   const downloadAASDialog = ref(false) // Variable to store if the DownloadAAS Dialog should be shown
   const aasToDelete = ref({}) // Variable to store the AAS to be deleted
@@ -528,6 +545,7 @@
   let changingAasSearchScope = false
   let ignoreNextSearchRouteUpdate = false
   let routeSearchGeneration = 0
+  let advancedQueryDraftGeneration = 0
 
   const {
     hasMorePages,
@@ -671,6 +689,14 @@
   const queryAvailable = computed(() => aasQueryTarget.value === 'aas-registry'
     ? aasRegistryQueryAvailable.value
     : aasRepositoryQueryAvailable.value)
+  const advancedQueryTarget = computed(() => favoriteQueryTarget.value ?? aasQueryTarget.value)
+  const availableFavoriteTargets = computed<QueryTarget[]>(() => {
+    if (selectedInfrastructureTemplate.value !== 'mono-all') return queryAvailable.value ? [aasQueryTarget.value] : []
+    const targets: QueryTarget[] = []
+    if (aasRegistryQueryAvailable.value) targets.push('aas-registry')
+    if (aasRepositoryQueryAvailable.value) targets.push('aas-repository')
+    return targets
+  })
   const queryCapabilityLoading = computed(() => aasQueryTarget.value === 'aas-registry'
     ? aasRegistryQueryLoading.value
     : aasRepositoryQueryLoading.value)
@@ -683,6 +709,10 @@
   watch(
     [() => aasRegistryURL.value, () => aasRepoURL.value, () => selectedInfrastructureId.value],
     ([newRegistryUrl, newRepoUrl, newId], [oldRegistryUrl, oldRepoUrl, oldId]) => {
+      if (newId !== oldId) {
+        advancedQueryDialog.value = false
+        clearAdvancedQueryDraft()
+      }
       const hasValidSourceUrl
         = (newRegistryUrl && newRegistryUrl.trim() !== '') || (newRepoUrl && newRepoUrl.trim() !== '')
 
@@ -879,6 +909,7 @@
   }
 
   function resetAASListState (enablePagination = true): void {
+    clearAdvancedQueryDraft()
     querySearch.clear()
     unbindQueryScrollListener()
     aasList.value = []
@@ -911,6 +942,7 @@
 
   function handleSearchInput (value: string | null): void {
     searchValue.value = value ?? ''
+    clearAdvancedQueryDraft()
   }
 
   async function changeAasSearchScope (scope: string): Promise<void> {
@@ -939,7 +971,7 @@
         ...retainedFilters.map(filter => formatQueryFilterExpression(filter)),
         previousSearch.text,
       ].filter(Boolean).join(' ')
-      advancedQueryDraft.value = ''
+      clearAdvancedQueryDraft()
 
       if (removedFilterCount > 0) {
         navigationStore.dispatchSnackbar({
@@ -1033,6 +1065,7 @@
 
   function openSearchDialog (): void {
     if (isMobile.value) return
+    advancedQueryDraftGeneration += 1
     if (advancedQueryDraft.value.trim() === '') {
       const structuredQuery = buildStructuredSearchQuery(
         aasQueryTarget.value,
@@ -1049,18 +1082,81 @@
   }
 
   function resetAdvancedQueryDraft (): void {
+    clearAdvancedQueryDraft()
     advancedQueryDraft.value = createQueryExample(aasQueryTarget.value)
   }
 
-  async function executeAdvancedQuery (query: QueryLanguageQuery): Promise<void> {
-    routeSearchGeneration += 1
-    const success = await runAdvancedQuery(query)
-    if (!success) return
+  function clearAdvancedQueryDraft (): void {
+    advancedQueryDraftGeneration += 1
+    advancedQueryDraft.value = ''
+    advancedFavoriteId.value = undefined
+    advancedFavoriteName.value = ''
+    favoriteQueryTarget.value = undefined
+  }
 
-    ignoreNextSearchRouteUpdate = true
-    const changed = await aasSearchRoute.commitAdvancedQuery(query, aasSearchRouteContext())
-    if (!changed) ignoreNextSearchRouteUpdate = false
-    advancedQueryDialog.value = false
+  async function loadQueryFavorite (favorite: QueryFavorite, mode: 'run' | 'edit' = 'run'): Promise<void> {
+    const draftGeneration = ++advancedQueryDraftGeneration
+    const infrastructureId = selectedInfrastructureId.value
+    const queryText = JSON.stringify(favorite.query, null, 2)
+    if (mode === 'run') {
+      const schema = await validateQueryLanguageSchema(queryText)
+      if (draftGeneration !== advancedQueryDraftGeneration || selectedInfrastructureId.value !== infrastructureId) return
+      const validation = validateQueryForTarget(queryText, favorite.target, selectedInfrastructureTemplate.value)
+      if (!schema.isValid || !validation.isValid || !availableFavoriteTargets.value.includes(favorite.target)) {
+        navigationStore.dispatchSnackbar({
+          status: true,
+          color: 'error',
+          text: schema.message || validation.message || 'This favorite is unavailable for the selected infrastructure.',
+        })
+        return
+      }
+      const success = await executeAdvancedQuery(JSON.parse(queryText), { target: favorite.target, closeDialog: false })
+      if (!success || draftGeneration !== advancedQueryDraftGeneration || selectedInfrastructureId.value !== infrastructureId) return
+    }
+    advancedQueryDraft.value = queryText
+    advancedFavoriteId.value = favorite.id
+    advancedFavoriteName.value = favorite.name
+    favoriteQueryTarget.value = favorite.target
+    advancedQueryDialog.value = mode === 'edit'
+  }
+
+  async function executeAdvancedQuery (
+    query: QueryLanguageQuery,
+    options: { target?: QueryTarget, closeDialog?: boolean } = {},
+  ): Promise<boolean> {
+    const generation = ++routeSearchGeneration
+    const draftGeneration = advancedQueryDraftGeneration
+    const previousScope = requestedAasSearchScope.value
+    const target = options.target ?? advancedQueryTarget.value
+    const closeDialog = options.closeDialog ?? advancedQueryDialog.value
+    let querySucceeded = false
+    changingAasSearchScope = true
+    try {
+      if (selectedInfrastructureTemplate.value === 'mono-all') {
+        requestedAasSearchScope.value = target === 'aas-repository' ? 'repository' : 'registry'
+        await nextTick()
+      }
+      changingAasSearchScope = false
+      if (aasQueryTarget.value !== target || !queryAvailable.value) {
+        navigationStore.dispatchSnackbar({ status: true, color: 'error', text: 'This query target is unavailable for the selected infrastructure.' })
+        return false
+      }
+      querySucceeded = await runAdvancedQuery(query)
+      if (!querySucceeded || generation !== routeSearchGeneration) return false
+
+      ignoreNextSearchRouteUpdate = true
+      const changed = await aasSearchRoute.commitAdvancedQuery(query, aasSearchRouteContext())
+      if (!changed) ignoreNextSearchRouteUpdate = false
+      if (closeDialog && draftGeneration === advancedQueryDraftGeneration) advancedQueryDialog.value = false
+      return true
+    } finally {
+      if (!querySucceeded && generation === routeSearchGeneration) {
+        changingAasSearchScope = true
+        requestedAasSearchScope.value = previousScope
+        await nextTick()
+      }
+      changingAasSearchScope = false
+    }
   }
 
   async function runAdvancedQuery (query: QueryLanguageQuery): Promise<boolean> {
@@ -1075,6 +1171,7 @@
   async function clearQuerySearch (): Promise<void> {
     routeSearchGeneration += 1
     searchValue.value = ''
+    clearAdvancedQueryDraft()
     ignoreNextSearchRouteUpdate = true
     const changed = await aasSearchRoute.clear(aasSearchRouteContext())
     if (!changed) ignoreNextSearchRouteUpdate = false
@@ -1088,6 +1185,7 @@
     const state = aasSearchRoute.state.value
     const stateKey = JSON.stringify(state)
     if (state.mode === 'search') {
+      clearAdvancedQueryDraft()
       searchValue.value = state.expression
       if (parsedSearch.value.incompleteField) {
         if (isCurrentRouteSearch(generation, stateKey)) {
@@ -1129,6 +1227,7 @@
         if (reloadWhenEmpty || aasList.value.length === 0) await loadCompleteAasList()
         return false
       }
+      clearAdvancedQueryDraft()
       advancedQueryDraft.value = JSON.stringify(validation.query, null, 2)
       const success = await runAdvancedQuery(validation.query)
       if (!isCurrentRouteSearch(generation, stateKey)) return false
@@ -1139,6 +1238,7 @@
       return false
     }
 
+    clearAdvancedQueryDraft()
     searchValue.value = ''
     if (reloadWhenEmpty) {
       querySearch.clear()
@@ -1171,7 +1271,7 @@
     querySearch.clear()
     unbindQueryScrollListener()
     searchValue.value = ''
-    advancedQueryDraft.value = ''
+    clearAdvancedQueryDraft()
   }
 
   function syncQueryItems (): void {

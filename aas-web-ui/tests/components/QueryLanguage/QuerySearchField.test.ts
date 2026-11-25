@@ -1,5 +1,6 @@
 import { DOMWrapper, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import { createVuetify } from 'vuetify'
 import QuerySearchField from '@/components/QueryLanguage/QuerySearchField.vue'
 
@@ -45,6 +46,37 @@ function findMenuItem (text: string): Element | undefined {
 }
 
 describe('QuerySearchField', () => {
+  it('keeps the menu closed when a favorite returns focus to the search field', async () => {
+    const wrapper = mount(QuerySearchField, {
+      attachTo: document.body,
+      props: { label: 'Search AAS', loading: false, modelValue: '', serverSearch: true, target: 'aas-registry' },
+      slots: {
+        favorites: ({ close }: { close: () => void }) => h('button', { onClick: close }, 'Run favorite'),
+      },
+      global: { plugins: [createVuetify()] },
+    })
+    const input = wrapper.get('input')
+    input.element.focus()
+    await nextTick()
+    const favorite = new DOMWrapper(document.body.querySelector('button')!)
+    favorite.element.focus()
+    await favorite.trigger('click')
+    await nextTick()
+    input.element.focus()
+    await nextTick()
+
+    expect(document.activeElement).toBe(input.element)
+    expect(document.body.querySelector('.v-menu.v-overlay--active')).toBeNull()
+    await wrapper.setProps({ advancedActive: true, loading: false })
+    await nextTick()
+    expect(document.body.querySelector('.v-menu.v-overlay--active')).toBeNull()
+
+    await wrapper.get('input').trigger('click')
+    await nextTick()
+    expect(document.body.querySelector('.v-menu.v-overlay--active')).not.toBeNull()
+    wrapper.unmount()
+  })
+
   it('opens compact field suggestions on focus without a result count placeholder', async () => {
     const wrapper = mountSearchField()
 
@@ -289,5 +321,22 @@ describe('QuerySearchField', () => {
     expect(document.body.querySelector('.v-list-item')).toBeNull()
     expect(wrapper.get('input').attributes('placeholder')).toBeUndefined()
     expect(wrapper.emitted('submit')).toHaveLength(1)
+  })
+
+  it('shows saved favorites on unsupported backends while preserving plain local search', async () => {
+    const wrapper = mount(QuerySearchField, {
+      attachTo: document.body,
+      props: { label: 'Search AAS', loading: false, modelValue: '', serverSearch: false, target: 'aas-registry' },
+      slots: { favorites: '<div>Saved query favorites</div>' },
+      global: { plugins: [createVuetify()] },
+    })
+    await wrapper.get('input').trigger('focus')
+    await nextTick()
+    expect(document.body.textContent).toContain('Saved query favorites')
+    expect(findMenuItem('Advanced Query Language')).toBeUndefined()
+    await wrapper.get('input').setValue('Motor')
+    await wrapper.get('input').trigger('keydown.enter')
+    expect(wrapper.emitted('submit')).toHaveLength(1)
+    wrapper.unmount()
   })
 })

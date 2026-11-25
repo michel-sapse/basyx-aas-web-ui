@@ -30,6 +30,25 @@
           <div class="text-caption text-break">{{ endpoint }}</div>
         </v-alert>
 
+        <v-text-field
+          v-if="favoritesEnabled && favoriteId"
+          v-model="favoriteName"
+          density="compact"
+          label="Favorite name"
+          required
+          variant="outlined"
+        />
+
+        <v-alert
+          v-if="executionEnabled === false"
+          class="mb-4"
+          density="compact"
+          type="info"
+          variant="tonal"
+        >
+          Querying is unavailable for this target on the selected infrastructure.
+        </v-alert>
+
         <QueryLanguageEditor
           v-model="queryText"
           :height="mobile ? 'calc(100svh - 310px)' : 'min(55vh, 520px)'"
@@ -46,6 +65,17 @@
         >
           {{ contextValidation.message }}
         </v-alert>
+
+        <QueryFavoriteActions
+          v-if="favoritesEnabled && target !== 'submodel-repository'"
+          :active="dialogOpen"
+          class="mt-2"
+          :favorite-id="favoriteId"
+          :name="favoriteName"
+          :query="schemaValidation.isValid && favoriteValidation.isValid ? favoriteValidation.query : undefined"
+          :target="target"
+          @saved="handleFavoriteSaved"
+        />
       </v-card-text>
 
       <v-divider />
@@ -93,15 +123,20 @@
     infrastructureTemplate: InfrastructureTemplate
     target: QueryTarget
     title: string
+    favoritesEnabled?: boolean
+    favoriteId?: string
+    executionEnabled?: boolean
   }>()
 
   const emit = defineEmits<{
     'execute': [query: QueryLanguageQuery]
     'reset': []
     'update:query': [query: string]
+    'update:favorite-id': [id: string]
   }>()
 
   const dialogOpen = defineModel<boolean>({ required: true })
+  const favoriteName = defineModel<string>('favoriteName', { default: '' })
   const schemaValidation = ref<QueryLanguageValidation>({ isValid: false, messages: [] })
 
   const queryText = computed({
@@ -113,13 +148,23 @@
     props.target,
     props.infrastructureTemplate,
   ))
-  const canExecute = computed(() => schemaValidation.value.isValid && contextValidation.value.isValid && !props.loading)
+  const favoriteValidation = computed(() => validateQueryForTarget(
+    props.query,
+    props.target,
+    props.favoriteId ? 'mono-all' : props.infrastructureTemplate,
+  ))
+  const canExecute = computed(() => props.executionEnabled !== false && schemaValidation.value.isValid && contextValidation.value.isValid && !props.loading)
   const targetLabel = computed(() => {
     if (props.target === 'aas-registry') return 'AAS Registry'
     if (props.target === 'aas-repository') return 'AAS Repository'
     return 'Submodel Repository'
   })
   const endpoint = computed(() => buildQueryEndpoint(props.endpoint, props.target))
+
+  function handleFavoriteSaved (id: string, name: string): void {
+    favoriteName.value = name
+    emit('update:favorite-id', id)
+  }
 
   function execute (): void {
     if (!canExecute.value || !contextValidation.value.query) return

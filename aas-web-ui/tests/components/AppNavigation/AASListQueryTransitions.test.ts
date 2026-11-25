@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import AASList from '@/components/AppNavigation/AASList.vue'
 
 const state = vi.hoisted(() => ({
@@ -218,6 +218,211 @@ describe('AAS list query transitions', () => {
       expect.any(Object),
       { limit: 100 },
     )
+  })
+
+  it('runs a repository favorite immediately against its saved mono-all target', async () => {
+    state.infrastructureTemplate.value = 'mono-all'
+    state.repositoryDescription.value = { profiles: [aasRepositoryQueryProfile] }
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const query = { $condition: { $boolean: true } }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'saved', name: 'Repository', target: 'aas-repository', query })
+
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(false)
+    expect((wrapper.vm as any).advancedFavoriteId).toBe('saved')
+    expect(mocks.queryPage).toHaveBeenCalledExactlyOnceWith(
+      'https://infra.example/shells', 'aas-repository', query, { limit: 100 },
+    )
+    expect(state.routeQuery.value).toEqual({ aasQuery: JSON.stringify(query), aasSearchScope: 'repository' })
+  })
+
+  it('opens a repository favorite for editing and runs it against its saved mono-all target', async () => {
+    state.infrastructureTemplate.value = 'mono-all'
+    state.repositoryDescription.value = { profiles: [aasRepositoryQueryProfile] }
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const query = { $condition: { $contains: [{ $field: '$sm#idShort' }, { $strVal: 'Nameplate' }] } }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'saved', name: 'Nameplates', target: 'aas-repository', query }, 'edit')
+
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(true)
+    expect((wrapper.vm as any).advancedFavoriteId).toBe('saved')
+    expect((wrapper.vm as any).advancedFavoriteName).toBe('Nameplates')
+    expect((wrapper.vm as any).advancedQueryTarget).toBe('aas-repository')
+    expect(JSON.parse((wrapper.vm as any).advancedQueryDraft)).toEqual(query)
+    expect(mocks.queryPage).not.toHaveBeenCalled()
+
+    await (wrapper.vm as any).executeAdvancedQuery(query)
+    expect(mocks.queryPage).toHaveBeenCalledExactlyOnceWith(
+      'https://infra.example/shells', 'aas-repository', query, { limit: 100 },
+    )
+    expect(state.routeQuery.value).toEqual({ aasQuery: JSON.stringify(query), aasSearchScope: 'repository' })
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(false)
+  })
+
+  it('restores the active search target when running a favorite fails', async () => {
+    state.infrastructureTemplate.value = 'mono-all'
+    state.repositoryDescription.value = { profiles: [aasRepositoryQueryProfile] }
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const query = { $condition: { $boolean: true } }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+    ;(wrapper.vm as any).handleSearchInput('original')
+    await (wrapper.vm as any).submitSearch()
+    mocks.queryPage.mockResolvedValue({ items: [], hasMore: false, success: false })
+
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'saved', name: 'Repository', target: 'aas-repository', query }, 'edit')
+    await (wrapper.vm as any).executeAdvancedQuery(query)
+
+    expect((wrapper.vm as any).aasQueryTarget).toBe('aas-registry')
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(true)
+    expect(state.routeQuery.value).toEqual({ aasSearch: 'original', aasSearchScope: 'registry' })
+  })
+
+  it('resets a favorite to an example for the active search target', async () => {
+    state.infrastructureTemplate.value = 'mono-all'
+    state.repositoryDescription.value = { profiles: [aasRepositoryQueryProfile] }
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const query = { $condition: { $boolean: true } }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'saved', name: 'Repository', target: 'aas-repository', query }, 'edit')
+
+    ;(wrapper.vm as any).resetAdvancedQueryDraft()
+
+    expect((wrapper.vm as any).advancedFavoriteId).toBeUndefined()
+    expect((wrapper.vm as any).advancedFavoriteName).toBe('')
+    expect((wrapper.vm as any).favoriteQueryTarget).toBeUndefined()
+    expect((wrapper.vm as any).advancedQueryTarget).toBe('aas-registry')
+    const example = JSON.parse((wrapper.vm as any).advancedQueryDraft)
+    expect(example.$condition.$contains[0].$field).toBe('$aasdesc#idShort')
+    await (wrapper.vm as any).executeAdvancedQuery(example)
+    expect(mocks.queryPage).toHaveBeenCalledExactlyOnceWith(
+      'https://infra.example/shell-descriptors', 'aas-registry', example, { limit: 100 },
+    )
+  })
+
+  it.each(['request', 'target'])('keeps the active editor context when a favorite %s fails', async failure => {
+    state.infrastructureTemplate.value = 'mono-all'
+    state.repositoryDescription.value = { profiles: [aasRepositoryQueryProfile] }
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+    ;(wrapper.vm as any).handleSearchInput('idShort:Original')
+    await (wrapper.vm as any).submitSearch()
+    ;(wrapper.vm as any).openSearchDialog()
+    const originalDraft = (wrapper.vm as any).advancedQueryDraft
+    ;(wrapper.vm as any).advancedQueryDialog = false
+    mocks.queryPage.mockResolvedValue({ items: [], hasMore: false, success: false })
+    const stop = watch(() => (wrapper.vm as any).requestedAasSearchScope, scope => {
+      if (failure === 'target' && scope === 'repository') {
+        state.repositoryDescription.value = null
+      }
+    }, { flush: 'sync' })
+
+    await (wrapper.vm as any).loadQueryFavorite({
+      id: 'failed', name: 'Failed repository', target: 'aas-repository', query: { $condition: { $boolean: true } },
+    })
+    stop()
+
+    expect((wrapper.vm as any).advancedFavoriteId).toBeUndefined()
+    expect((wrapper.vm as any).advancedFavoriteName).toBe('')
+    expect((wrapper.vm as any).favoriteQueryTarget).toBeUndefined()
+    expect((wrapper.vm as any).aasQueryTarget).toBe('aas-registry')
+    expect((wrapper.vm as any).advancedQueryDraft).toBe(originalDraft)
+    expect(state.routeQuery.value).toEqual({ aasSearch: 'idShort:Original', aasSearchScope: 'registry' })
+    ;(wrapper.vm as any).openSearchDialog()
+    expect((wrapper.vm as any).advancedQueryTarget).toBe('aas-registry')
+    expect((wrapper.vm as any).advancedQueryDraft).toBe(originalDraft)
+    expect(mocks.queryPage).toHaveBeenCalledTimes(failure === 'target' ? 1 : 2)
+  })
+
+  it('clears favorite context when a search route becomes invalid', async () => {
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+    await (wrapper.vm as any).loadQueryFavorite({
+      id: 'saved', name: 'Saved', target: 'aas-registry', query: { $condition: { $boolean: true } },
+    }, 'edit')
+    state.routeQuery.value = { aasQuery: '{invalid' }
+    await flushPromises()
+    expect((wrapper.vm as any).advancedFavoriteId).toBeUndefined()
+    expect((wrapper.vm as any).advancedFavoriteName).toBe('')
+    expect((wrapper.vm as any).favoriteQueryTarget).toBeUndefined()
+    expect((wrapper.vm as any).advancedQueryDraft).toBe('')
+  })
+
+  it('keeps an editor opened during an immediate favorite request open when that request finishes', async () => {
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const query = { $condition: { $boolean: true } }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+    let resolveQuery!: (page: any) => void
+    mocks.queryPage.mockReturnValue(new Promise(resolve => {
+      resolveQuery = resolve
+    }))
+
+    const run = (wrapper.vm as any).loadQueryFavorite({ id: 'run', name: 'Run', target: 'aas-registry', query })
+    await flushPromises()
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'edit', name: 'Edit', target: 'aas-registry', query }, 'edit')
+    resolveQuery({ items: [], hasMore: false, success: true })
+    await run
+
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(true)
+    expect((wrapper.vm as any).advancedFavoriteId).toBe('edit')
+    expect((wrapper.vm as any).advancedFavoriteName).toBe('Edit')
+  })
+
+  it('opens an unavailable favorite for editing without executing it', async () => {
+    const query = { $condition: { $contains: [{ $field: '$sm#idShort' }, { $strVal: 'Nameplate' }] } }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'saved', name: 'Nameplates', target: 'aas-repository', query }, 'edit')
+
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(true)
+    expect((wrapper.vm as any).advancedFavoriteName).toBe('Nameplates')
+    expect((wrapper.vm as any).advancedQueryTarget).toBe('aas-repository')
+    expect(mocks.queryPage).not.toHaveBeenCalled()
+  })
+
+  it('keeps a newer editor session open when an older editor request finishes', async () => {
+    state.registryDescription.value = { profiles: [aasRegistryQueryProfile] }
+    const query = { $condition: { $boolean: true } }
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'first', name: 'First', target: 'aas-registry', query }, 'edit')
+    let resolveQuery!: (page: any) => void
+    mocks.queryPage.mockReturnValue(new Promise(resolve => {
+      resolveQuery = resolve
+    }))
+    const run = (wrapper.vm as any).executeAdvancedQuery(query)
+    ;(wrapper.vm as any).advancedQueryDialog = false
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'second', name: 'Second', target: 'aas-registry', query }, 'edit')
+    resolveQuery({ items: [], hasMore: false, success: true })
+    await run
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(true)
+    expect((wrapper.vm as any).advancedFavoriteId).toBe('second')
+    expect((wrapper.vm as any).advancedFavoriteName).toBe('Second')
+  })
+
+  it.each([
+    { $condition: { $contains: [{ $field: '$sm#idShort' }, { $strVal: 'Nameplate' }] } },
+    { $condition: { $unsupported: [] } },
+  ])('rejects a favorite incompatible with the current schema or infrastructure', async query => {
+    state.repositoryDescription.value = { profiles: [aasRepositoryQueryProfile] }
+    mocks.fetchAasShellListPage.mockResolvedValue({ items: [], hasMore: false, source: 'repository' })
+    const wrapper = mount(AASList, { shallow: true })
+    await flushPromises()
+
+    await (wrapper.vm as any).loadQueryFavorite({ id: 'saved', name: 'Invalid', target: 'aas-repository', query })
+
+    expect((wrapper.vm as any).advancedQueryDialog).toBe(false)
+    expect(mocks.queryPage).not.toHaveBeenCalled()
+    expect(mocks.dispatchSnackbar).toHaveBeenCalledWith(expect.objectContaining({ color: 'error' }))
   })
 
   it('automatically uses the only available mono-all query endpoint', async () => {

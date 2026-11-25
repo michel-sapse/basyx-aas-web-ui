@@ -8,6 +8,18 @@ export interface QueryLanguageQuery {
   $select?: string
 }
 
+export interface QueryFavorite {
+  id: string
+  name: string
+  target: Exclude<QueryTarget, 'submodel-repository'>
+  query: QueryLanguageQuery
+}
+
+export interface QueryFavoritesStorage {
+  version: 1
+  favorites: QueryFavorite[]
+}
+
 export interface QueryPage<T> {
   items: T[]
   nextCursor?: string
