@@ -22,6 +22,7 @@
           :readonly="advancedActive"
           variant="outlined"
           @click:clear="clearSearch"
+          @click:control="openSuggestions"
           @focus="openSuggestions"
           @keydown.enter.prevent="submitSearch"
           @keydown.esc="suggestionsOpen = false"
@@ -64,7 +65,7 @@
     </template>
 
     <v-sheet
-      v-if="serverSearch"
+      v-if="serverSearch || $slots.favorites"
       border
       max-width="380"
       min-width="280"
@@ -77,133 +78,139 @@
         nav
         slim
       >
-        <template v-if="!advancedActive && searchScopeOptions.length > 1">
-          <div class="d-flex align-center ga-2 pl-2 pr-0 py-2">
-            <small class="text-disabled flex-shrink-0">Search in</small>
+        <slot :close="closeSuggestions" name="favorites" />
+        <v-divider v-if="serverSearch && $slots.favorites" />
 
-            <v-btn-toggle
-              class="h-auto ml-auto"
-              color="primary"
-              density="compact"
-              divided
-              mandatory
-              :model-value="searchScope"
-              variant="outlined"
-              @update:model-value="updateSearchScope"
-            >
-              <v-btn
-                v-for="option in searchScopeOptions"
-                :key="option.value"
-                class="px-2"
-                height="24"
-                size="x-small"
-                slim
-                :value="option.value"
+        <template v-if="serverSearch">
+          <template v-if="!advancedActive && searchScopeOptions.length > 1">
+            <div class="d-flex align-center ga-2 pl-2 pr-0 py-2">
+              <small class="text-disabled flex-shrink-0">Search in</small>
+
+              <v-btn-toggle
+                class="h-auto ml-auto"
+                color="primary"
+                density="compact"
+                divided
+                mandatory
+                :model-value="searchScope"
+                variant="outlined"
+                @update:model-value="updateSearchScope"
               >
-                <small>{{ option.title }}</small>
-              </v-btn>
-            </v-btn-toggle>
-          </div>
+                <v-btn
+                  v-for="option in searchScopeOptions"
+                  :key="option.value"
+                  class="px-2"
+                  height="24"
+                  size="x-small"
+                  slim
+                  :value="option.value"
+                >
+                  <small>{{ option.title }}</small>
+                </v-btn>
+              </v-btn-toggle>
+            </div>
 
-          <v-divider class="my-0" />
-        </template>
+            <v-divider class="my-0" />
+          </template>
 
-        <template v-if="!advancedActive && committedFilters.length > 0">
-          <v-list-subheader>Applied filters</v-list-subheader>
+          <template v-if="!advancedActive && committedFilters.length > 0">
+            <v-list-subheader>Applied filters</v-list-subheader>
+
+            <v-list-item
+              v-for="filter in committedFilters"
+              :key="filter.id"
+              prepend-gap="4"
+              :title="formatQueryFilterExpression(filter)"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-filter-check-outline" size="small" />
+              </template>
+
+              <template #append>
+                <v-btn
+                  :aria-label="`Remove ${formatQueryFilterExpression(filter)}`"
+                  icon="mdi-close"
+                  size="x-small"
+                  variant="text"
+                  @click.stop="removeFilter(filter.id)"
+                />
+              </template>
+            </v-list-item>
+
+            <v-divider />
+          </template>
+
+          <v-list-subheader>{{ advancedActive ? 'Advanced query active' : suggestionTitle }}</v-list-subheader>
+
+          <template v-if="!advancedActive && draftState.stage === 'value' && activeField?.valueOptions">
+            <v-list-item
+              v-for="option in valueSuggestions"
+              :key="option.value"
+              :subtitle="option.value"
+              :title="option.title"
+              @click="selectValue(option.value)"
+            />
+          </template>
 
           <v-list-item
-            v-for="filter in committedFilters"
-            :key="filter.id"
+            v-else-if="!advancedActive && draftState.stage === 'value' && canCommitDraftFilter()"
             prepend-gap="4"
-            :title="formatQueryFilterExpression(filter)"
+            subtitle="Add this filter"
+            :title="draftState.value.trim()"
+            @click="commitDraftFilter()"
           >
             <template #prepend>
-              <v-icon icon="mdi-filter-check-outline" size="small" />
-            </template>
-
-            <template #append>
-              <v-btn
-                :aria-label="`Remove ${formatQueryFilterExpression(filter)}`"
-                icon="mdi-close"
-                size="x-small"
-                variant="text"
-                @click.stop="removeFilter(filter.id)"
-              />
+              <v-icon icon="mdi-plus" size="small" />
             </template>
           </v-list-item>
 
-          <v-divider />
-        </template>
-
-        <v-list-subheader>{{ advancedActive ? 'Advanced query active' : suggestionTitle }}</v-list-subheader>
-
-        <template v-if="!advancedActive && draftState.stage === 'value' && activeField?.valueOptions">
           <v-list-item
-            v-for="option in valueSuggestions"
-            :key="option.value"
-            :subtitle="option.value"
-            :title="option.title"
-            @click="selectValue(option.value)"
+            v-else-if="!advancedActive && draftState.stage === 'value'"
+            disabled
+            subtitle="Press Space to add the filter"
+            title="Type a value"
           />
-        </template>
 
-        <v-list-item
-          v-else-if="!advancedActive && draftState.stage === 'value' && canCommitDraftFilter()"
-          prepend-gap="4"
-          subtitle="Add this filter"
-          :title="draftState.value.trim()"
-          @click="commitDraftFilter()"
-        >
-          <template #prepend>
-            <v-icon icon="mdi-plus" size="small" />
+          <template v-else-if="!advancedActive && draftState.stage === 'operator' && activeField">
+            <v-list-item
+              v-for="option in operatorSuggestions"
+              :key="option.operator"
+              :subtitle="QUERY_FILTER_OPERATOR_LABELS[option.operator]"
+              :title="option.symbol"
+              @click="selectOperator(option.operator)"
+            />
           </template>
-        </v-list-item>
 
-        <v-list-item
-          v-else-if="!advancedActive && draftState.stage === 'value'"
-          disabled
-          subtitle="Press Space to add the filter"
-          title="Type a value"
-        />
+          <template v-else-if="!advancedActive">
+            <v-list-item
+              v-for="field in fieldSuggestions"
+              :key="field.key"
+              prepend-gap="4"
+              :subtitle="field.key"
+              :title="field.label"
+              @click="selectField(field.key)"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-filter-outline" size="small" />
+              </template>
+            </v-list-item>
+          </template>
 
-        <template v-else-if="!advancedActive && draftState.stage === 'operator' && activeField">
+          <v-divider v-if="!advancedActive && advancedEnabled" class="my-1" />
+
           <v-list-item
-            v-for="option in operatorSuggestions"
-            :key="option.operator"
-            :subtitle="QUERY_FILTER_OPERATOR_LABELS[option.operator]"
-            :title="option.symbol"
-            @click="selectOperator(option.operator)"
-          />
-        </template>
-
-        <template v-else-if="!advancedActive">
-          <v-list-item
-            v-for="field in fieldSuggestions"
-            :key="field.key"
+            v-if="advancedEnabled"
+            class="my-1"
             prepend-gap="4"
-            :subtitle="field.key"
-            :title="field.label"
-            @click="selectField(field.key)"
+            :title="advancedActive ? 'Edit advanced query' : 'Advanced Query Language'"
+            @click="openAdvancedQuery"
           >
             <template #prepend>
-              <v-icon icon="mdi-filter-outline" size="small" />
+              <v-icon icon="mdi-code-json" size="small" />
             </template>
           </v-list-item>
         </template>
 
-        <v-divider v-if="!advancedActive && advancedEnabled" class="my-1" />
-
-        <v-list-item
-          v-if="advancedEnabled"
-          class="my-1"
-          prepend-gap="4"
-          :title="advancedActive ? 'Edit advanced query' : 'Advanced Query Language'"
-          @click="openAdvancedQuery"
-        >
-          <template #prepend>
-            <v-icon icon="mdi-code-json" size="small" />
-          </template>
-        </v-list-item>
       </v-list>
     </v-sheet>
   </v-menu>
@@ -271,6 +278,7 @@
   }>()
 
   const searchExpression = defineModel<string>({ required: true })
+  const slots = useSlots()
   const suggestionsOpen = ref(false)
   const inputContainerRef = ref<HTMLDivElement | null>(null)
   const committedFilters = ref<QueryFilter[]>([])
@@ -344,7 +352,7 @@
 
   function openSuggestions (): void {
     if (
-      props.serverSearch
+      (props.serverSearch || slots.favorites)
       && !props.advancedDialogOpen
       && (!props.advancedActive || props.advancedEnabled)
     ) suggestionsOpen.value = true
@@ -356,6 +364,12 @@
     draft.value = ''
     updateExpression()
     emit('clear')
+  }
+
+  function closeSuggestions (): void {
+    // Restore focus before closing to keep the focus handler from reopening the menu.
+    inputContainerRef.value?.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true })
+    suggestionsOpen.value = false
   }
 
   async function submitSearch (): Promise<void> {
