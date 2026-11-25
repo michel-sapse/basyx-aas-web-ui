@@ -26,6 +26,7 @@ export default defineConfig({
     ? [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
     : 'list',
   use: {
+    channel: process.env.IT_BROWSER_CHANNEL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -47,7 +48,7 @@ export default defineConfig({
     },
     {
       name: 'integration-timeseries',
-      testMatch: '**/plugins/timeseries.pw.ts',
+      testMatch: ['**/plugins/timeseries.pw.ts', '**/plugins/operation-results.pw.ts'],
       use: {
         baseURL: timeseriesBaseURL,
       },

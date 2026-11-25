@@ -1,0 +1,13 @@
+{
+  "modelType": "Operation",
+  "idShort": "GetTimeSeries",
+  "description": [{ "language": "en", "text": "Demo operation: retrieve temperature samples within an inclusive UTC interval." }],
+  "qualifiers": [{ "type": "invocationDelegation", "valueType": "xs:string", "value": "http://timeseries-operation:8080/timeseries" }],
+  "inputVariables": [
+    { "value": { "modelType": "Range", "idShort": "Timespan", "valueType": "xs:dateTime", "min": "0001-01-01T00:00:00Z", "max": "9999-12-31T23:59:59Z", "semanticId": { "type": "ExternalReference", "keys": [{ "type": "GlobalReference", "value": "https://admin-shell.io/idta/TimeSeries/Timespan/1/1" }] } } },
+    { "value": { "modelType": "Property", "idShort": "SimulateError", "valueType": "xs:boolean", "value": "false" } }
+  ],
+  "outputVariables": [
+    { "value": { "modelType": "SubmodelElementList", "idShort": "Samples", "typeValueListElement": "SubmodelElementCollection", "orderRelevant": true, "value": [] } }
+  ]
+}

@@ -1,0 +1,43 @@
+import { readFile } from 'node:fs/promises'
+import { isDeepStrictEqual } from 'node:util'
+
+const endpoint = process.env.AAS_ENDPOINT ?? 'http://localhost:8081'
+const id = Buffer.from('https://admin-shell.io/idta/TimeSeries/1/1').toString('base64url')
+const elementsUrl = `${endpoint}/submodels/${id}/submodel-elements`
+for (const file of ['operation.json', 'readrecords.json']) {
+  await initialize(file)
+}
+
+async function initialize (file: string) {
+  const operation = await readFile(new URL(file, import.meta.url), 'utf8')
+  const expected = JSON.parse(operation)
+  const existing = await fetch(`${elementsUrl}/${expected.idShort}`)
+  if (existing.ok) {
+    const actual = await existing.json()
+    if (file === 'readrecords.json') {
+      const previousFixture = structuredClone(expected)
+      previousFixture.inputVariables[1].value.value = '2026-11-24T09:10:00Z'
+      if (isDeepStrictEqual(actual, previousFixture)) {
+        const update = await fetch(`${elementsUrl}/${expected.idShort}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: operation })
+        if (!update.ok) {
+          throw new Error(`Fixture migration failed: ${update.status} ${await update.text()}`)
+        }
+        console.log('Extended unchanged ReadRecords fixture to the 25-record interval.')
+        return
+      }
+    }
+    if (actual.modelType !== 'Operation' || !actual.qualifiers?.some((q: { type: string, value: string }) => q.type === 'invocationDelegation' && q.value === expected.qualifiers[0].value)) {
+      throw new Error(`${expected.idShort} already exists with a different definition; refusing to overwrite it.`)
+    }
+    console.log(`${expected.idShort} already exists; leaving it unchanged.`)
+  } else {
+    if (existing.status !== 404) {
+      throw new Error(`Operation lookup failed: ${existing.status} ${await existing.text()}`)
+    }
+    const response = await fetch(elementsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: operation })
+    if (!response.ok) {
+      throw new Error(`Operation creation failed: ${response.status} ${await response.text()}`)
+    }
+    console.log(`${expected.idShort} added to the existing TimeSeries submodel.`)
+  }
+}

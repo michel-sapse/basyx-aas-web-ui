@@ -59,6 +59,12 @@ jobs:
           cd aas-web-ui
           pnpm build
 
+      - name: Test delegated operation demo
+        working-directory: aas-web-ui
+        run: |
+          pnpm --dir ../examples/TimeSeriesData/operation-service test
+          pnpm exec tsc --ignoreConfig --noEmit --strict --target es2022 --module nodenext --allowImportingTsExtensions --types node ../examples/TimeSeriesData/operation-service/*.ts
+
   integration-preview:
     needs: build
     runs-on: ubuntu-latest
@@ -216,7 +222,12 @@ jobs:
           EOF
 
           cd examples/TimeSeriesData
-          docker compose -f docker-compose.yaml -f docker-compose.ci.override.yaml up -d
+          docker compose -f docker-compose.yaml -f docker-compose.operations.yaml -f docker-compose.ci.override.yaml up -d --build
+          docker compose -f docker-compose.yaml -f docker-compose.operations.yaml -f docker-compose.ci.override.yaml wait timeseries-operation-init
+
+      - name: Check delegated invocation through the AAS API
+        working-directory: aas-web-ui
+        run: pnpm --dir ../examples/TimeSeriesData/operation-service smoke
 
       - name: Wait for TimeSeries UI to become reachable
         run: |
@@ -234,9 +245,9 @@ jobs:
 
           echo "TimeSeries UI did not become fully ready within timeout"
           cd examples/TimeSeriesData
-          docker compose -f docker-compose.yaml -f docker-compose.ci.override.yaml ps
+          docker compose -f docker-compose.yaml -f docker-compose.operations.yaml -f docker-compose.ci.override.yaml ps
           curl -sS -D - http://127.0.0.1:3000/ | sed -n '1,80p' || true
-          docker compose -f docker-compose.yaml -f docker-compose.ci.override.yaml logs --no-color --tail=200
+          docker compose -f docker-compose.yaml -f docker-compose.operations.yaml -f docker-compose.ci.override.yaml logs --no-color --tail=200
           exit 1
 
       - name: Run TimeSeries Integration Test
@@ -248,8 +259,8 @@ jobs:
         if: failure()
         run: |
           cd examples/TimeSeriesData
-          docker compose -f docker-compose.yaml -f docker-compose.ci.override.yaml ps
-          docker compose -f docker-compose.yaml -f docker-compose.ci.override.yaml logs --no-color --tail=300
+          docker compose -f docker-compose.yaml -f docker-compose.operations.yaml -f docker-compose.ci.override.yaml ps
+          docker compose -f docker-compose.yaml -f docker-compose.operations.yaml -f docker-compose.ci.override.yaml logs --no-color --tail=300
 
       - name: Upload TimeSeries Integration Artifacts
         if: failure()
@@ -264,7 +275,7 @@ jobs:
         if: always()
         run: |
           cd examples/TimeSeriesData
-          docker compose -f docker-compose.yaml -f docker-compose.ci.override.yaml down
+          docker compose -f docker-compose.yaml -f docker-compose.operations.yaml -f docker-compose.ci.override.yaml down
 
   integration-feature-control:
     needs: build
