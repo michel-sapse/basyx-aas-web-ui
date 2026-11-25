@@ -13,8 +13,10 @@ test('ReadRecords results survive tree navigation and paginate without persisten
   await page.getByRole('button', { name: 'execute', exact: true }).click()
   const invocation = await invocationPromise
   const argumentsArray = invocation.postDataJSON().inputArguments
-  expect(argumentsArray.find((argument: { value: { idShort: string, value: string } }) => argument.value.idShort === 'StartTime').value.value).toBe('2026-11-24T09:00:00.000Z')
-  expect(argumentsArray.find((argument: { value: { idShort: string, value: string } }) => argument.value.idShort === 'EndTime').value.value).toBe('2026-11-24T11:00:00.000Z')
+  const startValue = argumentsArray.find((argument: { value: { idShort: string, value: string } }) => argument.value.idShort === 'StartTime').value.value
+  const endValue = argumentsArray.find((argument: { value: { idShort: string, value: string } }) => argument.value.idShort === 'EndTime').value.value
+  expect(new Date(startValue).toISOString()).toBe('2026-11-24T09:00:00.000Z')
+  expect(new Date(endValue).toISOString()).toBe('2026-11-24T11:00:00.000Z')
 
   await expect(page.getByLabel('Records (25)', { exact: true })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Temperature [°C]', exact: true })).toBeVisible()

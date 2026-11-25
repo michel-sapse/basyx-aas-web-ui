@@ -7,7 +7,7 @@ It is not the source branch for an upstream feature PR.
 
 - `feature/operation-result-table` (`3c04530`): output rendering, temporary
   invocation results, search, filters, column selection and CSV export.
-- `feat/readrecords-date-time-picker` (`56a6533`): ReadRecords date-time selection
+- `feat/readrecords-date-time-picker` (`84f91d0`): ReadRecords date-time selection
   and Timespan Range input.
 - Base: `main` / upstream commit `91c429a`, including the dependency updates.
 
@@ -22,7 +22,9 @@ The date-time picker expects canonical UTC milliseconds, while repositories can
 return valid bounds without fractional seconds or with explicit offsets. The
 integration-only `pickerTimestamp` adapter normalizes the picker view and
 validation without rewriting stored/invocation values just by opening the view.
-An explicit **Apply range** action emits the selected canonical UTC bounds.
+Valid changed selections are applied automatically; unchanged bounds retain
+their original backend lexical representation. The payload test compares the
+exact instants rather than requiring optional zero milliseconds in the string.
 This compatibility behavior should be reviewed with the picker feature owner
 before the separate upstream PR is finalized.
 
