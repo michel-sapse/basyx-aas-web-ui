@@ -18,10 +18,8 @@ test('query favorites can be edited, copied and deleted while persisting across 
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('basyxQueryFavorites')!).favorites[0].name))
     .toBe('Integration query renamed')
 
-  await page.getByRole('button', { name: 'Save as favorite', exact: true }).click()
-  const nameDialog = page.getByRole('dialog').last()
-  await nameDialog.getByRole('textbox', { name: 'Favorite name', exact: true }).fill('Integration query copy')
-  await nameDialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Favorite name', exact: true }).fill('Integration query copy')
+  await page.getByRole('button', { name: 'Save as new favorite', exact: true }).click()
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('basyxQueryFavorites')!).favorites.length)).toBe(2)
   await page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Run query', exact: true }) }).getByRole('button', { name: 'Cancel', exact: true }).click()
   await page.reload({ waitUntil: 'networkidle' })

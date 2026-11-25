@@ -9,7 +9,7 @@ It is not the source branch for an upstream feature PR.
   invocation results, search, filters, column selection and CSV export.
 - `feat/readrecords-date-time-picker` (`254bc94`): ReadRecords date-time selection
   and Timespan Range input.
-- `query_favorites` (`57a0405`): named advanced AAS-search query favorites,
+- `query_favorites` (`2c5590a`): named advanced AAS-search query favorites,
   saved in browser localStorage with edit, run and delete controls.
 - Base: `main` / upstream commit `91c429a`, including the dependency updates.
 
