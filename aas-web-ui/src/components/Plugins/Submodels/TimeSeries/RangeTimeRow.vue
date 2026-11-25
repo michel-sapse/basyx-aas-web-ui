@@ -2,7 +2,7 @@
   <div class="range-time-row">
     <span class="range-time-label">{{ label }}</span>
 
-    <div class="range-time-parts">
+    <div class="range-time-parts" :class="{ 'range-time-24': hourFormat === '24' }">
       <template v-for="(part, index) in parts" :key="part.key">
         <RangeTimeControl
           :ref="setControl(index)"
@@ -29,20 +29,20 @@
 </template>
 
 <script lang="ts" setup>
-  import type { TimePoint } from './fixedOffsetRange'
+  import type { HourFormat, TimePoint } from './fixedOffsetRange'
 
-  const props = defineProps<{ point: TimePoint, label: string, disabled?: boolean, error?: string }>()
+  const props = withDefaults(defineProps<{ point: TimePoint, label: string, disabled?: boolean, error?: string, hourFormat?: HourFormat }>(), { hourFormat: '24' })
   const emit = defineEmits<{ 'part-change': [field: keyof TimePoint, value: string], 'confirm': [], 'cancel': [] }>()
   const controls = ref<Array<{ focus: () => void } | null>>([])
   const errorId = useId()
   const prefix = computed(() => props.label.startsWith('Start') ? 'Start' : 'End')
-  const parts = [
-    { key: 'hour', label: 'hour', min: 1, max: 12, digits: 2 },
+  const parts = computed(() => [
+    { key: 'hour', label: 'hour', min: props.hourFormat === '24' ? 0 : 1, max: props.hourFormat === '24' ? 23 : 12, digits: 2 },
     { key: 'minute', label: 'minute', min: 0, max: 59, digits: 2 },
     { key: 'second', label: 'second', min: 0, max: 59, digits: 2 },
     { key: 'millisecond', label: 'milliseconds', min: 0, max: 999, digits: 3 },
-    { key: 'period', label: 'AM/PM', min: 0, max: 1, digits: 2 },
-  ] as const
+    ...(props.hourFormat === '12' ? [{ key: 'period', label: 'AM/PM', min: 0, max: 1, digits: 2 } as const] : []),
+  ] as const)
 
   defineExpose({ focusHour: () => controls.value[0]?.focus() })
 
@@ -58,6 +58,7 @@
 .range-time-label { color: rgba(var(--v-theme-on-surface), 0.62); font-size: 14px; }
 .range-time-error { grid-column: 1 / -1; }
 .range-time-parts { display: grid; grid-template-columns: 1fr 7px 1fr 7px 1fr 7px 1.2fr 1.2fr; align-items: center; gap: 4px; }
+.range-time-parts.range-time-24 { grid-template-columns: 1fr 7px 1fr 7px 1fr 7px 1.4fr; }
 .range-time-separator { text-align: center; color: rgba(var(--v-theme-on-surface), 0.62); }
 @media (max-width: 600px) { .range-time-row { grid-template-columns: 1fr; gap: 4px; } }
 </style>

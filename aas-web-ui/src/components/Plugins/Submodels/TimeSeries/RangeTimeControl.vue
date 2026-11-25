@@ -23,29 +23,40 @@
           @wheel.prevent="onWheel"
         >
 
-        <button
+        <v-btn
           :aria-label="`Choose ${label.toLowerCase()}`"
           class="range-time-chevron"
           :disabled="disabled"
+          :elevation="0"
+          height="34"
+          icon
+          rounded="sm"
           type="button"
+          variant="text"
+          width="24"
           v-bind="menuProps"
         >
           <v-icon icon="mdi-chevron-down" size="16" />
-        </button>
+        </v-btn>
       </template>
 
       <div :id="id" :aria-label="label" class="range-time-options" role="listbox">
         <v-virtual-scroll ref="scroller" height="200" item-height="32" :items="options">
           <template #default="{ item }">
-            <button
+            <v-btn
               :aria-selected="item === canonical"
+              block
               class="range-time-option"
               :class="{ selected: item === options[highlighted] }"
+              :elevation="0"
+              height="32"
               role="option"
+              rounded="0"
               type="button"
+              variant="text"
               @click="choose(item)"
               @keydown.stop="onKeydown"
-            >{{ item }}</button>
+            >{{ item }}</v-btn>
           </template>
         </v-virtual-scroll>
       </div>
@@ -157,16 +168,19 @@
 .range-time-control input {
   width: 100%;
   min-width: 0;
+  appearance: none;
   border: 0;
   outline: 0;
+  box-shadow: none;
+  background: transparent;
   color: var(--range-accent, rgb(var(--v-theme-primary)));
   font: inherit;
   font-variant-numeric: tabular-nums;
   text-align: center;
-  padding: 0 2px 0 8px;
+  padding: 0 2px 0 4px;
 }
-.range-time-chevron { padding-right: 3px; color: rgba(var(--v-theme-on-surface), 0.6); }
-.range-time-options { background: rgb(var(--v-theme-surface)); min-width: 72px; padding: 4px 0; }
-.range-time-option { display: block; width: 100%; height: 32px; text-align: center; font-variant-numeric: tabular-nums; }
-.range-time-option:hover, .range-time-option.selected { background: rgba(var(--v-theme-primary), 0.12); }
+.range-time-chevron { min-width: 24px; padding: 0; color: rgba(var(--v-theme-on-surface), 0.6); }
+.range-time-options { background: rgb(var(--v-theme-surface)); min-width: 72px; padding: 4px 0; border: 1px solid rgb(var(--v-theme-readRecordsBorder, 213, 223, 230)); border-radius: 4px; }
+.range-time-option { text-align: center; font-variant-numeric: tabular-nums; color: rgb(var(--v-theme-on-surface)); letter-spacing: normal; }
+.range-time-option:hover, .range-time-option.selected { background: rgb(var(--v-theme-readRecordsTint, 227, 246, 252)); color: rgb(var(--v-theme-readRecordsAccent, 0, 129, 160)); }
 </style>

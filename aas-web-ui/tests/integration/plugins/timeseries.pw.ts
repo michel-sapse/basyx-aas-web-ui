@@ -160,7 +160,10 @@ test('timeseries plugin is reachable in the example runtime', async ({ page }) =
 
 for (const theme of ['light', 'dark']) {
   test('ReadRecords Figma range picker: ' + theme, async ({ page }) => {
-    await page.addInitScript(value => localStorage.setItem('theme', value), theme)
+    await page.addInitScript(value => {
+      localStorage.setItem('theme', value)
+      localStorage.setItem('basyx.readRecords.hourFormat', '12')
+    }, theme)
     await page.goto('/', { waitUntil: 'networkidle' })
     await page.getByText('SensorExampleAAS').first().click()
     await page.getByText('TimeSeries', { exact: true }).first().click()
@@ -177,7 +180,7 @@ for (const theme of ['light', 'dark']) {
     await picker.getByRole('textbox', { name: 'Start date', exact: true }).fill('Nov 19, 2026')
     await picker.getByRole('textbox', { name: 'End date', exact: true }).fill('Nov 25, 2026')
     for (const bound of ['Start', 'End']) {
-      for (const [part, value] of [['hour', '12'], ['minute', '00'], ['second', '43'], ['milliseconds', '815'], ['AM/PM', 'PM']]) {
+      for (const [part, value] of [['hour', '12'], ['minute', '00'], ['second', '43'], ['milliseconds', '815']]) {
         await picker.getByRole('combobox', { name: bound + ' ' + part, exact: true }).fill(value)
       }
     }
@@ -191,7 +194,7 @@ for (const theme of ['light', 'dark']) {
     const sidebarBox = await picker.locator('.range-sidebar').boundingBox()
     expect(sidebarBox!.width / bodyBox!.width).toBeCloseTo(0.295, 1)
     await picker.screenshot({ path: 'test-results/readrecords-range-' + theme + '.png' })
-    await picker.getByRole('combobox', { name: 'End AM/PM', exact: true }).press('Enter')
+    await picker.getByRole('combobox', { name: 'End milliseconds', exact: true }).press('Enter')
     await expect(picker).toBeVisible()
     await expect(summary).toContainText('Nov 19, 2026, 12:00:43.815 → Nov 25, 2026, 12:00:43.815')
     await expect(page.getByText('6 days · Custom range', { exact: true })).toBeVisible()
@@ -199,6 +202,8 @@ for (const theme of ['light', 'dark']) {
     await picker.getByRole('combobox', { name: 'End milliseconds', exact: true }).fill('900')
     await picker.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(picker.getByRole('combobox', { name: 'End milliseconds', exact: true })).toHaveValue('815')
+    await expect(picker.getByRole('combobox', { name: 'Time format', exact: true })).toHaveCount(0)
+    await expect(picker.getByRole('combobox', { name: 'End AM/PM', exact: true })).toHaveCount(0)
     // Use a live-data range for the real query, independent of illustrative dates.
     await picker.getByRole('button', { name: 'Last 24 hours', exact: true }).click()
     // A complete range is ready for Execute without an Apply click.
