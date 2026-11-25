@@ -201,7 +201,7 @@ for (const theme of ['light', 'dark']) {
     await expect(picker.getByRole('combobox', { name: 'End milliseconds', exact: true })).toHaveValue('815')
     // Use a live-data range for the real query, independent of illustrative dates.
     await picker.getByRole('button', { name: 'Last 24 hours', exact: true }).click()
-    await picker.getByRole('button', { name: 'Apply range', exact: true }).click()
+    // A complete range is ready for Execute without an Apply click.
     await expect(execute).toBeEnabled()
     await page.getByRole('checkbox', { name: 'Run asynchronously' }).uncheck()
     const [response] = await Promise.all([

@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { nextTick } from 'vue'
 import { createVuetify } from 'vuetify'
 import DateRangeCalendar from '@/components/Plugins/Submodels/TimeSeries/DateRangeCalendar.vue'
-import { DEFAULT_END_TIME, DEFAULT_START_TIME, pointToUtc } from '@/components/Plugins/Submodels/TimeSeries/fixedOffsetRange'
+import { DEFAULT_END_TIME, DEFAULT_START_TIME, pointToUtc, type RecordRange } from '@/components/Plugins/Submodels/TimeSeries/fixedOffsetRange'
 import RangeTimeControl from '@/components/Plugins/Submodels/TimeSeries/RangeTimeControl.vue'
 import ReadRecordsRangePicker from '@/components/Plugins/Submodels/TimeSeries/ReadRecordsRangePicker.vue'
 
@@ -41,16 +41,16 @@ function button (label: string) {
   return new DOMWrapper(el!)
 }
 async function picker (empty = false) {
-  const wrapper = mount(ReadRecordsRangePicker, { attachTo: document.body, props: { startValue: empty ? DEFAULT_START_TIME : start, endValue: empty ? DEFAULT_END_TIME : end, initialOffset: 60 }, global: { plugins: [createVuetify()] } })
+  const wrapper = mount(ReadRecordsRangePicker, { attachTo: document.body, props: { 'startValue': empty ? DEFAULT_START_TIME : start, 'endValue': empty ? DEFAULT_END_TIME : end, 'initialOffset': 60, 'onUpdate-range': (range: RecordRange): void => {
+    void wrapper.setProps({ startValue: range.start, endValue: range.end })
+  } }, global: { plugins: [createVuetify()] } })
   wrappers.push(wrapper)
   await vi.waitFor(() => expect(document.querySelector('[aria-label="Start hour"]')).toBeTruthy())
   return wrapper
 }
 async function commit (wrapper: Awaited<ReturnType<typeof picker>>) {
   await button('Apply range').trigger('click')
-  const range = wrapper.emitted('update-range')!.at(-1)![0] as { start: string, end: string }
-  await wrapper.setProps({ startValue: range.start, endValue: range.end })
-  return range
+  return { start: wrapper.props().startValue, end: wrapper.props().endValue }
 }
 
 describe('ReadRecords Figma range picker', () => {
@@ -70,9 +70,10 @@ describe('ReadRecords Figma range picker', () => {
   it('discards edits on Cancel and commits on Return while keeping the calendar visible', async () => {
     const wrapper = await picker()
     await element('[aria-label="End milliseconds"]').setValue('900')
-    expect(wrapper.get('.range-summary-value').text()).toContain('.815')
+    expect(wrapper.get('.range-summary-value').text()).toContain('.900')
+    expect(wrapper.emitted('update-range')!.at(-1)![0]).toEqual({ start, end: '2026-11-25T11:00:43.900Z' })
     await button('Cancel').trigger('click')
-    expect(wrapper.emitted('update-range')).toBeUndefined()
+    expect(wrapper.emitted('update-range')!.at(-1)![0]).toEqual({ start, end })
     await nextTick()
     expect((element('[aria-label="End milliseconds"]').element as HTMLInputElement).value).toBe('815')
     await element('[aria-label="End milliseconds"]').setValue('900')
@@ -88,7 +89,7 @@ describe('ReadRecords Figma range picker', () => {
     await element('[aria-label="End milliseconds"]').setValue('900')
     await (action === 'Escape' ? element('[aria-label="End hour"]').trigger('keydown', { key: 'Escape' }) : button('Cancel').trigger('click'))
     await nextTick()
-    expect(wrapper.emitted('update-range')).toBeUndefined()
+    expect(wrapper.emitted('update-range')!.at(-1)![0]).toEqual({ start, end })
     expect(wrapper.emitted('editing')!.at(-1)).toEqual([false])
     expect(wrapper.find('[role="grid"]').exists()).toBe(true)
     expect((element('[aria-label="End milliseconds"]').element as HTMLInputElement).value).toBe('815')
@@ -124,11 +125,12 @@ describe('ReadRecords Figma range picker', () => {
     expect(wrapper.get('[role="grid"]').attributes('aria-label')).toBe('January 1')
   })
 
-  it('blocks execution only while there are unapplied edits', async () => {
+  it('auto-saves valid edits and blocks execution only for incomplete or invalid inputs', async () => {
     const wrapper = await picker()
     expect(wrapper.emitted('editing')!.at(-1)).toEqual([false])
     await element('[aria-label="End milliseconds"]').setValue('900')
-    expect(wrapper.emitted('editing')!.at(-1)).toEqual([true])
+    expect(wrapper.emitted('editing')!.at(-1)).toEqual([false])
+    expect(wrapper.props().endValue).toBe('2026-11-25T11:00:43.900Z')
     const range = await commit(wrapper)
     expect(range.end).toBe('2026-11-25T11:00:43.900Z')
     expect(wrapper.emitted('editing')!.at(-1)).toEqual([false])
@@ -170,6 +172,7 @@ describe('ReadRecords Figma range picker', () => {
     for (const [part, value] of [['hour', '12'], ['minute', '00'], ['second', '43'], ['milliseconds', '815'], ['AM/PM', 'PM']]) {
       await element('[aria-label="' + prefix + ' ' + part + '"]').setValue(value)
     }
+    expect({ start: wrapper.props().startValue, end: wrapper.props().endValue }).toEqual({ start, end })
     expect(await commit(wrapper)).toEqual({ start, end })
   })
 
@@ -231,6 +234,36 @@ describe('ReadRecords Figma range picker', () => {
     expect(document.querySelector('[id="' + input.attributes('aria-describedby') + '"]')?.getAttribute('role')).toBe('alert')
     await input.trigger('keydown', { key: 'Enter' })
     expect(wrapper.emitted('update-range')).toHaveLength(1)
+  })
+
+  it('auto-saves presets without Apply and Cancel restores an unselected baseline', async () => {
+    const wrapper = await picker(true)
+    await button('Last 24 hours').trigger('click')
+    const range = { start: wrapper.props().startValue, end: wrapper.props().endValue }
+    expect(Date.parse(range.end) - Date.parse(range.start)).toBe(86_400_000)
+    expect(wrapper.emitted('editing')!.at(-1)).toEqual([false])
+    expect(button('Apply range').attributes('disabled')).toBeUndefined()
+    await button('Cancel').trigger('click')
+    expect(wrapper.props().startValue).toBe(DEFAULT_START_TIME)
+    expect(wrapper.props().endValue).toBe(DEFAULT_END_TIME)
+    expect(wrapper.findAll('.calendar-marker')).toHaveLength(0)
+  })
+
+  it('does not auto-save invalid drafts or reinitialize focus after an auto-save', async () => {
+    const wrapper = await picker()
+    const input = element('[aria-label="End milliseconds"]')
+    ;(input.element as HTMLInputElement).focus()
+    await input.setValue('90')
+    expect(wrapper.props().endValue).toBe('2026-11-25T11:00:43.090Z')
+    expect((input.element as HTMLInputElement).value).toBe('90')
+    expect(document.activeElement).toBe(input.element)
+    const count = wrapper.emitted('update-range')!.length
+    await element('[aria-label="End minute"]').setValue('70')
+    expect(wrapper.emitted('update-range')).toHaveLength(count)
+    expect(wrapper.emitted('editing')!.at(-1)).toEqual([true])
+    await element('[aria-label="End minute"]').setValue('01')
+    expect(wrapper.props().endValue).toBe('2026-11-25T11:01:43.090Z')
+    expect(wrapper.emitted('editing')!.at(-1)).toEqual([false])
   })
 
   it('navigates the calendar across month and year boundaries by keyboard', async () => {

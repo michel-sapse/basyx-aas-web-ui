@@ -37,7 +37,7 @@
         @confirm="apply"
         @date="selectDate"
         @offset="changeOffset"
-        @point-change="updatePoint"
+        @point-change="updatePart"
         @preset="selectPreset"
       />
 
@@ -81,6 +81,7 @@
   const form = ref<{ focusHour: (endpoint: 'start' | 'end') => void } | null>(null)
   let explicitEndpoint = false
   let lastAppliedKey = ''
+  let cancelSnapshot: { range: RecordRange, offset: number, preset: QuickRange } | null = null
 
   const appliedValid = computed(() => recordRangeValid(props.startValue, props.endValue))
   const draftError = computed(() => {
@@ -109,17 +110,29 @@
     return `${formatRangeDate(start, start.slice(0, 4) !== end.slice(0, 4))} – ${formatRangeDate(end)} · ${rangeDuration(Date.parse(draftRange.value.end) - Date.parse(draftRange.value.start))}`
   })
 
-  watch(editing, value => emit('editing', value), { immediate: true })
+  watch(() => editing.value && !draftRange.value, value => emit('editing', value), { immediate: true })
+  watch([draftRange, draftOffset, draftPreset], () => {
+    if (editing.value && draftRange.value && !props.disabled) saveRange(draftRange.value)
+  })
   watch(() => [props.startValue, props.endValue], values => {
-    if (JSON.stringify(values) !== lastAppliedKey) appliedPreset.value = 'Custom range'
+    // Keep raw typed values, date-click order and focus when the parent echoes an
+    // auto-saved range. Only an external change replaces the editable selection.
+    if (JSON.stringify(values) === lastAppliedKey) return
+    appliedPreset.value = 'Custom range'
+    cancelSnapshot = null
     loadDraft()
   }, { immediate: true })
   watch(() => props.disabled, value => {
-    if (value) loadDraft()
+    if (value) {
+      cancelSnapshot = null
+      loadDraft()
+    }
   })
   onBeforeUnmount(() => emit('editing', false))
 
-  function loadDraft (): void {
+  function loadDraft (range?: RecordRange): void {
+    const savedRange = range ?? { start: props.startValue, end: props.endValue }
+    const hasRange = recordRangeValid(savedRange.start, savedRange.end)
     draftOffset.value = appliedOffset.value
     draftPreset.value = appliedPreset.value
     touched.value = false
@@ -127,17 +140,29 @@
     explicitEndpoint = false
     // Repository arguments are only an applied range when both bounds are valid.
     // A stale partial input must not pull the initial calendar into an old year.
-    draftStart.value = appliedValid.value ? pointFromUtc(props.startValue, appliedOffset.value) : emptyTimePoint()
-    draftEnd.value = appliedValid.value ? pointFromUtc(props.endValue, appliedOffset.value) : emptyTimePoint(true)
+    draftStart.value = hasRange ? pointFromUtc(savedRange.start, appliedOffset.value) : emptyTimePoint()
+    draftEnd.value = hasRange ? pointFromUtc(savedRange.end, appliedOffset.value) : emptyTimePoint(true)
     activeEndpoint.value = draftStart.value.date ? 'end' : 'start'
+  }
+
+  function beginEdit (): void {
+    cancelSnapshot ??= { range: { start: props.startValue, end: props.endValue }, offset: appliedOffset.value, preset: appliedPreset.value }
+    editing.value = true
+  }
+
+  function updatePart (endpoint: 'start' | 'end', field: keyof TimePoint, value: string): void {
+    // Merge at the owner so a blur/auto-advance cannot replace a newer component
+    // with an old copy of the entire timestamp from a child render.
+    const point = endpoint === 'start' ? draftStart.value : draftEnd.value
+    updatePoint(endpoint, { ...point, [field]: value })
   }
 
   function updatePoint (endpoint: 'start' | 'end', point: TimePoint): void {
     if (props.disabled) return
+    beginEdit()
     if (endpoint === 'start') draftStart.value = point
     else draftEnd.value = point
     draftPreset.value = 'Custom range'
-    editing.value = true
     touched.value = true
   }
 
@@ -173,8 +198,8 @@
 
   function selectPreset (preset: QuickRange): void {
     if (props.disabled) return
+    beginEdit()
     draftPreset.value = preset
-    editing.value = true
     const range = quickRecordRange(preset, draftOffset.value)
     if (range) {
       draftStart.value = pointFromUtc(range.start, draftOffset.value)
@@ -186,7 +211,7 @@
 
   function changeOffset (offset: number): void {
     if (props.disabled || !validOffset(offset)) return
-    editing.value = true
+    beginEdit()
     const start = validInstant(draftStart.value)
     const end = validInstant(draftEnd.value)
     draftOffset.value = offset
@@ -210,10 +235,8 @@
     touched.value = true
     if (props.disabled || !draftRange.value) return
     const range = draftRange.value
-    appliedOffset.value = draftOffset.value
-    appliedPreset.value = draftPreset.value
-    lastAppliedKey = JSON.stringify([range.start, range.end])
-    emit('update-range', range)
+    saveRange(range)
+    cancelSnapshot = null
     draftStart.value = pointFromUtc(range.start, appliedOffset.value)
     draftEnd.value = pointFromUtc(range.end, appliedOffset.value)
     editing.value = false
@@ -222,13 +245,30 @@
     activeEndpoint.value = 'end'
   }
 
+  function saveRange (range: RecordRange): void {
+    appliedOffset.value = draftOffset.value
+    appliedPreset.value = draftPreset.value
+    lastAppliedKey = JSON.stringify([range.start, range.end])
+    if (lastAppliedKey !== JSON.stringify([props.startValue, props.endValue])) emit('update-range', range)
+  }
+
   function cancel (): void {
-    loadDraft()
+    const snapshot = cancelSnapshot
+    cancelSnapshot = null
+    if (!snapshot) {
+      loadDraft()
+      return
+    }
+    appliedOffset.value = snapshot.offset
+    appliedPreset.value = snapshot.preset
+    lastAppliedKey = JSON.stringify([snapshot.range.start, snapshot.range.end])
+    emit('update-range', snapshot.range)
+    loadDraft(snapshot.range)
   }
 
   function clearDraft (): void {
     if (props.disabled) return
-    editing.value = true
+    beginEdit()
     draftStart.value = emptyTimePoint()
     draftEnd.value = emptyTimePoint(true)
     draftPreset.value = 'Custom range'
