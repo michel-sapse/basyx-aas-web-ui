@@ -3,19 +3,24 @@
     <aside class="range-sidebar">
       <div class="range-sidebar-heading">QUICK RANGES</div>
 
-      <button
+      <v-btn
         v-for="item in QUICK_RANGES"
         :key="item"
         :aria-pressed="preset === item"
+        block
         class="range-preset"
         :class="{ selected: preset === item }"
         :disabled="disabled"
+        :elevation="0"
+        height="44"
+        rounded="sm"
         type="button"
+        variant="text"
         @click="emit('preset', item)"
       >
         {{ item }}
         <v-icon v-if="preset === item" icon="mdi-check" size="18" />
-      </button>
+      </v-btn>
 
       <div class="range-timezone">
         <label>Time zone · Fixed offset</label>
@@ -32,6 +37,7 @@
           variant="outlined"
           @update:model-value="emit('offset', Number($event))"
         />
+
       </div>
     </aside>
 
@@ -81,6 +87,7 @@
           ref="startRow"
           :disabled="disabled"
           :error="timeError('start')"
+          :hour-format="hourFormat"
           label="Start time"
           :point="start"
           @cancel="emit('cancel')"
@@ -92,6 +99,7 @@
           ref="endRow"
           :disabled="disabled"
           :error="timeError('end')"
+          :hour-format="hourFormat"
           label="End time"
           :point="end"
           @cancel="emit('cancel')"
@@ -106,9 +114,9 @@
 </template>
 
 <script lang="ts" setup>
-  import { formatRangeDate, offsetLabel, parseDateInput, pointError, pointFromUtc, QUICK_RANGES, type QuickRange, type TimePoint } from './fixedOffsetRange'
+  import { formatRangeDate, type HourFormat, offsetLabel, parseDateInput, pointError, pointFromUtc, QUICK_RANGES, type QuickRange, type TimePoint } from './fixedOffsetRange'
 
-  const props = defineProps<{ start: TimePoint, end: TimePoint, offset: number, preset: QuickRange, activeEndpoint: 'start' | 'end', disabled?: boolean, error?: string }>()
+  const props = defineProps<{ start: TimePoint, end: TimePoint, offset: number, hourFormat: HourFormat, preset: QuickRange, activeEndpoint: 'start' | 'end', disabled?: boolean, error?: string }>()
   const emit = defineEmits<{
     'point-change': [endpoint: 'start' | 'end', field: keyof TimePoint, value: string]
     'activate': [endpoint: 'start' | 'end']
@@ -135,11 +143,11 @@
   }
 
   function dateError (endpoint: 'start' | 'end'): string | undefined {
-    return props.error && !parseDateInput(point(endpoint).date) ? pointError(point(endpoint)) || undefined : undefined
+    return props.error && !parseDateInput(point(endpoint).date) ? pointError(point(endpoint), props.hourFormat) || undefined : undefined
   }
 
   function timeError (endpoint: 'start' | 'end'): string | undefined {
-    return props.error && parseDateInput(point(endpoint).date) ? pointError(point(endpoint)) || undefined : undefined
+    return props.error && parseDateInput(point(endpoint).date) ? pointError(point(endpoint), props.hourFormat) || undefined : undefined
   }
 
   function activate (endpoint: 'start' | 'end', event: FocusEvent): void {
@@ -157,9 +165,10 @@
 .range-form { display: grid; grid-template-columns: 29.5% minmax(0, 1fr); }
 .range-sidebar { display: flex; flex-direction: column; padding: 22px 12px 16px; background: rgba(var(--v-theme-on-surface), 0.035); border-right: 1px solid var(--range-border); }
 .range-sidebar-heading { font-size: 12px; font-weight: 700; color: rgba(var(--v-theme-on-surface), 0.62); padding: 0 12px 15px; }
-.range-preset { display: flex; align-items: center; justify-content: space-between; min-height: 42px; text-align: left; padding: 8px 12px; border-radius: 5px; font-size: 15px; }
+.range-preset { justify-content: flex-start; text-align: left; padding: 0 12px; color: rgb(var(--v-theme-on-surface)); font-size: 16px; font-weight: 400; letter-spacing: normal; box-shadow: none; }
+.range-preset :deep(.v-btn__content) { display: flex; width: 100%; justify-content: space-between; align-items: center; }
 .range-preset:hover { background: rgba(var(--v-theme-on-surface), 0.035); }
-.range-preset.selected { background: var(--range-tint); color: var(--range-accent); font-weight: 600; }
+.range-preset.selected { background: var(--range-soft, var(--range-tint)); color: var(--range-accent); font-weight: 600; }
 .range-timezone { margin-top: auto; padding: 22px 12px 0; }
 .range-timezone label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 500; color: rgba(var(--v-theme-on-surface), 0.62); }
 .range-main { padding: 20px 26px 12px; min-width: 0; }

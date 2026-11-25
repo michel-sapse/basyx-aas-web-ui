@@ -21,6 +21,7 @@ beforeAll(() => {
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-25T11:00:00.000Z'))
+  localStorage.clear()
 })
 afterEach(() => {
   for (const wrapper of wrappers.splice(0)) {
@@ -28,6 +29,8 @@ afterEach(() => {
   }
   document.body.innerHTML = ''
   vi.useRealTimers()
+  vi.restoreAllMocks()
+  localStorage.clear()
 })
 
 function element (selector: string) {
@@ -77,7 +80,7 @@ describe('ReadRecords Figma range picker', () => {
     await nextTick()
     expect((element('[aria-label="End milliseconds"]').element as HTMLInputElement).value).toBe('815')
     await element('[aria-label="End milliseconds"]').setValue('900')
-    await element('[aria-label="End AM/PM"]').trigger('keydown', { key: 'Enter' })
+    await element('[aria-label="End milliseconds"]').trigger('keydown', { key: 'Enter' })
     expect(wrapper.emitted('update-range')!.at(-1)![0]).toEqual({ start, end: '2026-11-25T11:00:43.900Z' })
     await nextTick()
     expect(wrapper.find('[role="region"]').exists()).toBe(true)
@@ -162,14 +165,14 @@ describe('ReadRecords Figma range picker', () => {
     await wrapper.getComponent({ name: 'ReadRecordsRangeForm' }).vm.$emit('date', first)
     await nextTick()
     expect(document.activeElement?.getAttribute('aria-label')).toBe('Start hour')
-    for (const [label, value] of [['Start hour', '12'], ['Start minute', '00'], ['Start second', '43'], ['Start milliseconds', '815'], ['Start AM/PM', 'PM']]) {
+    for (const [label, value] of [['Start hour', '12'], ['Start minute', '00'], ['Start second', '43'], ['Start milliseconds', '815']]) {
       await element('[aria-label="' + label + '"]').setValue(value)
     }
     await wrapper.getComponent({ name: 'ReadRecordsRangeForm' }).vm.$emit('date', second)
     await nextTick()
     const prefix = reverse ? 'Start' : 'End'
     expect(document.activeElement?.getAttribute('aria-label')).toBe(prefix + ' hour')
-    for (const [part, value] of [['hour', '12'], ['minute', '00'], ['second', '43'], ['milliseconds', '815'], ['AM/PM', 'PM']]) {
+    for (const [part, value] of [['hour', '12'], ['minute', '00'], ['second', '43'], ['milliseconds', '815']]) {
       await element('[aria-label="' + prefix + ' ' + part + '"]').setValue(value)
     }
     expect({ start: wrapper.props().startValue, end: wrapper.props().endValue }).toEqual({ start, end })
@@ -180,7 +183,6 @@ describe('ReadRecords Figma range picker', () => {
     const wrapper = await picker()
     await element('[aria-label="End date"]').setValue('Nov 19, 2026')
     await element('[aria-label="End hour"]').setValue('11')
-    await element('[aria-label="End AM/PM"]').setValue('AM')
     expect(document.querySelectorAll('.calendar-marker')).toHaveLength(1)
     expect(await commit(wrapper)).toEqual({ start: '2026-11-19T10:00:43.815Z', end: start })
     await nextTick()
@@ -196,8 +198,8 @@ describe('ReadRecords Figma range picker', () => {
     const form = wrapper.getComponent({ name: 'ReadRecordsRangeForm' })
     form.vm.$emit('offset', 345)
     await nextTick()
-    expect((element('[aria-label="Start hour"]').element as HTMLInputElement).value).toBe('04')
-    expect(pointToUtc((wrapper.vm as any).draftStart, 345)).toBe(start)
+    expect((element('[aria-label="Start hour"]').element as HTMLInputElement).value).toBe('16')
+    expect(pointToUtc((wrapper.vm as any).draftStart, 345, '24')).toBe(start)
     await commit(wrapper)
     expect(wrapper.get('.range-summary-offset').text()).toBe('UTC+05:45')
     await nextTick()
@@ -214,7 +216,7 @@ describe('ReadRecords Figma range picker', () => {
     const wrapper = await picker()
     await button('Last 24 hours').trigger('click')
     const vm = wrapper.vm as any
-    const first = { start: pointToUtc(vm.draftStart, 60), end: pointToUtc(vm.draftEnd, 60) }
+    const first = { start: pointToUtc(vm.draftStart, 60, '24'), end: pointToUtc(vm.draftEnd, 60, '24') }
     wrapper.getComponent({ name: 'ReadRecordsRangeForm' }).vm.$emit('offset', -210)
     await nextTick()
     expect(await commit(wrapper)).toEqual(first)
@@ -264,6 +266,62 @@ describe('ReadRecords Figma range picker', () => {
     await element('[aria-label="End minute"]').setValue('01')
     expect(wrapper.props().endValue).toBe('2026-11-25T11:01:43.090Z')
     expect(wrapper.emitted('editing')!.at(-1)).toEqual([false])
+  })
+
+  it('always uses 24-hour time, removes AM/PM and saves midnight correctly', async () => {
+    const wrapper = await picker()
+    expect(wrapper.find('[aria-label="Start AM/PM"]').exists()).toBe(false)
+    expect(wrapper.findAll('.range-time-parts [role="combobox"]')).toHaveLength(8)
+    expect(wrapper.get('.range-summary-value').text()).not.toContain('PM')
+    await element('[aria-label="End hour"]').setValue('00')
+    expect(wrapper.props().endValue).toBe('2026-11-24T23:00:43.815Z')
+    expect(wrapper.get('.range-summary-value').text()).toContain('Nov 25, 2026, 00:00:43.815')
+    const count = wrapper.emitted('update-range')!.length
+    await element('[aria-label="End hour"]').setValue('24')
+    expect(wrapper.emitted('update-range')).toHaveLength(count)
+    expect(wrapper.emitted('editing')!.at(-1)).toEqual([true])
+  })
+
+  it('has no format selector and ignores previously remembered AM/PM preferences', async () => {
+    localStorage.setItem('basyx.readRecords.hourFormat', '12')
+    const wrapper = await picker()
+    expect(wrapper.find('[aria-label="Time format"]').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="End AM/PM"]').exists()).toBe(false)
+    expect(wrapper.get('.range-summary-value').text()).not.toMatch(/AM|PM/)
+    expect(wrapper.emitted('update-range')).toBeUndefined()
+    expect(wrapper.props().startValue).toBe(start)
+    expect(wrapper.props().endValue).toBe(end)
+  })
+
+  it('preserves a partial date selection and typing focus in 24-hour mode', async () => {
+    const wrapper = await picker(true)
+    const form = wrapper.getComponent({ name: 'ReadRecordsRangeForm' })
+    await form.vm.$emit('date', '2026-11-19')
+    await nextTick()
+    expect((element('[aria-label="Start hour"]').element as HTMLInputElement).value).toBe('00')
+    expect(wrapper.emitted('update-range')).toBeUndefined()
+    await form.vm.$emit('date', '2026-11-25')
+    await nextTick()
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('End hour')
+    await element('[aria-label="End hour"]').setValue('23')
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('End minute')
+    expect(wrapper.props().startValue).toBe('2026-11-18T23:00:00.000Z')
+    expect(wrapper.props().endValue).toBe('2026-11-25T22:59:59.999Z')
+  })
+
+  it('keeps Cancel and fixed-offset conversion correct with 24-hour time', async () => {
+    const wrapper = await picker()
+    const form = wrapper.getComponent({ name: 'ReadRecordsRangeForm' })
+    await element('[aria-label="End milliseconds"]').setValue('900')
+    form.vm.$emit('offset', 345)
+    await nextTick()
+    expect((element('[aria-label="End hour"]').element as HTMLInputElement).value).toBe('16')
+    expect(wrapper.props().endValue).toBe('2026-11-25T11:00:43.900Z')
+    await button('Cancel').trigger('click')
+    expect(wrapper.props().endValue).toBe(end)
+    expect(wrapper.find('[aria-label="End AM/PM"]').exists()).toBe(false)
+    expect((element('[aria-label="End milliseconds"]').element as HTMLInputElement).value).toBe('815')
+    expect(wrapper.get('.range-summary-offset').text()).toBe('UTC+01:00')
   })
 
   it('navigates the calendar across month and year boundaries by keyboard', async () => {

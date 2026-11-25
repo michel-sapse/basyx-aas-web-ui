@@ -1,5 +1,5 @@
 <template>
-  <v-container class="pa-0" fluid>
+  <v-container class="pa-0" :class="{ 'read-records-operation': Boolean(readRecordsBounds) }" fluid>
     <v-card v-if="localOperationObject" class="mt-4" color="elevatedCard">
       <v-alert
         v-if="lastInvocation"
@@ -121,7 +121,7 @@
             <v-switch
               v-model="invokeAsynchronously"
               class="mr-3"
-              color="primary"
+              :color="readRecordsBounds ? 'readRecordsAccent' : 'primary'"
               density="compact"
               :disabled="loading"
               hide-details
@@ -131,19 +131,22 @@
             <!-- Clear-Button -->
             <v-btn
               v-if="isEditable"
-              class="mr-3"
-              color="primary"
+              class="mr-3 operation-clear"
+              :color="readRecordsBounds ? 'readRecordsAccent' : 'primary'"
+              :elevation="readRecordsBounds ? 0 : undefined"
               size="small"
               variant="outlined"
               @click="clearFields()"
             >clear</v-btn>
             <!-- Execute-Button -->
             <v-btn
-              class="text-buttonText"
-              color="primary"
+              :class="readRecordsBounds ? 'text-white operation-execute' : 'text-buttonText'"
+              :color="readRecordsBounds ? 'readRecordsPrimary' : 'primary'"
               :disabled="rangeIncomplete"
+              :elevation="readRecordsBounds ? 0 : undefined"
               :loading="loading"
               size="small"
+              :variant="readRecordsBounds ? 'flat' : 'elevated'"
               @click="executeOperation()"
             >execute</v-btn>
           </template>
@@ -722,3 +725,19 @@
     }
   }
 </script>
+
+<style scoped>
+.read-records-operation :deep(.operation-clear),
+.read-records-operation :deep(.operation-execute) {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 4px;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+.read-records-operation :deep(.operation-clear) {
+  background: rgb(var(--v-theme-surface));
+}
+</style>
