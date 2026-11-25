@@ -7,6 +7,8 @@ import { getLocalStorageItem, setLocalStorageItem } from '@/utils/storage'
 
 const STORAGE_KEY = 'basyxQueryFavorites'
 
+class DeletedQueryFavoriteError extends Error {}
+
 export const useQueryFavoritesStore = defineStore('queryFavoritesStore', () => {
   const favorites = ref<QueryFavorite[]>([])
   const loadError = ref('')
@@ -39,7 +41,7 @@ export const useQueryFavoritesStore = defineStore('queryFavoritesStore', () => {
         return [...current, favorite]
       }
       if (!current.some(item => item.id === id)) {
-        throw new Error('This query favorite has been deleted. Save it as a new favorite.')
+        throw new DeletedQueryFavoriteError('This query favorite has been deleted. Save it as a new favorite.')
       }
       return current.map(item => item.id === id ? favorite : item)
     })
@@ -58,7 +60,7 @@ export const useQueryFavoritesStore = defineStore('queryFavoritesStore', () => {
       favorites.value = next
       loadError.value = ''
     } catch (error_) {
-      if (error_ instanceof Error && error_.message.startsWith('This query favorite')) {
+      if (error_ instanceof DeletedQueryFavoriteError) {
         throw error_
       }
       throw new Error('Query favorites could not be saved. Check browser storage access, available space and the saved data format.', { cause: error_ })
