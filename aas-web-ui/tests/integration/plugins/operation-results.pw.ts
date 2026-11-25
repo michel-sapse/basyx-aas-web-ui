@@ -1,5 +1,38 @@
 import { expect, test } from '@playwright/test'
 
+test('query favorites can be edited, copied and deleted while persisting across reload', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('basyxQueryFavorites')) {
+      localStorage.setItem('basyxQueryFavorites', JSON.stringify({ version: 1, favorites: [
+        { id: 'integration-query', name: 'Integration query', target: 'aas-repository', query: { $condition: { $boolean: true } } },
+      ] }))
+    }
+  })
+  await page.goto('/', { waitUntil: 'networkidle' })
+  const search = page.getByRole('textbox', { name: 'Search AAS', exact: true })
+  await search.focus()
+  await expect(page.getByText('Integration query', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Edit Integration query', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Favorite name', exact: true }).fill('Integration query renamed')
+  await page.getByRole('button', { name: 'Update favorite', exact: true }).click()
+  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('basyxQueryFavorites')!).favorites[0].name))
+    .toBe('Integration query renamed')
+
+  await page.getByRole('button', { name: 'Save as favorite', exact: true }).click()
+  const nameDialog = page.getByRole('dialog').last()
+  await nameDialog.getByRole('textbox', { name: 'Favorite name', exact: true }).fill('Integration query copy')
+  await nameDialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('basyxQueryFavorites')!).favorites.length)).toBe(2)
+  await page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Run query', exact: true }) }).getByRole('button', { name: 'Cancel', exact: true }).click()
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByRole('textbox', { name: 'Search AAS', exact: true }).focus()
+  await expect(page.getByText('Integration query renamed', { exact: true })).toBeVisible()
+  await expect(page.getByText('Integration query copy', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Delete Integration query copy', exact: true }).click()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('basyxQueryFavorites')!).favorites.length)).toBe(1)
+})
+
 test('ReadRecords results survive tree navigation and paginate without persistence', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' })
   await page.getByText('SensorExampleAAS', { exact: true }).first().click()

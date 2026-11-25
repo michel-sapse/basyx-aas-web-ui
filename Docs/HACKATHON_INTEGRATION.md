@@ -7,11 +7,14 @@ It is not the source branch for an upstream feature PR.
 
 - `feature/operation-result-table` (`3c04530`): output rendering, temporary
   invocation results, search, filters, column selection and CSV export.
-- `feat/readrecords-date-time-picker` (`84f91d0`): ReadRecords date-time selection
+- `feat/readrecords-date-time-picker` (`254bc94`): ReadRecords date-time selection
   and Timespan Range input.
+- `query_favorites` (`57a0405`): named advanced AAS-search query favorites,
+  saved in browser localStorage with edit, run and delete controls.
 - Base: `main` / upstream commit `91c429a`, including the dependency updates.
 
-`query_favorites` has no feature commits yet and is not included.
+All three features are included. Query favorites are saved search definitions,
+not bookmarks of individual assets.
 
 ## Integration decisions
 
