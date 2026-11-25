@@ -134,6 +134,35 @@ describe('TimeSeries_v1_1.vue fetch behavior', () => {
     })
   })
 
+  it('invokes a referenced ReadRecords operation and excludes the end boundary', async () => {
+    const wrapper = createWrapper()
+    const vm = wrapper.vm as any
+    const submodel = wrapper.props('submodelElementData')
+    submodel.submodelElements.push({ modelType: 'Operation', idShort: 'ReadRecords', semanticId: { keys: [{ value: 'urn:basyx:timeseries:read-records:1' }] } })
+    vm.selectedSegment = submodel.submodelElements[0].value.find((segment: any) => segment.idShort === 'LinkedSegment')
+    vm.selectedSegment.value.push({ modelType: 'ReferenceElement', idShort: 'ReadRecordsOperation', value: { keys: [{ type: 'Operation', value: 'ReadRecords' }] } })
+    vm.timeVariable = { idShort: 'time' }
+    vm.yVariables = [{ idShort: 'rpm' }]
+    vm.timeRangeSelection = { mode: 'absolute', start: '2026-11-05', stop: '2026-11-05', calendar: true }
+    const start = new Date(2026, 10, 5).toISOString()
+    const stop = new Date(2026, 10, 6).toISOString()
+    postRequestMock.mockResolvedValue({ success: true, data: {
+      executionState: 'Completed', success: true, outputArguments: [{ value: {
+        idShort: 'Records', value: JSON.stringify([{ time: start, rpm: 1200 }, { time: stop, rpm: 1300 }]),
+      } }],
+    } })
+    vm.fetchLinkedData()
+    await vi.waitFor(() => expect(vm.isFetching).toBe(false))
+    expect(postRequestMock.mock.calls[0][0]).toBe('/submodels/time-series/submodel-elements/ReadRecords/invoke')
+    expect(JSON.parse(postRequestMock.mock.calls[0][1]).inputArguments.map((argument: any) => argument.value)).toEqual([
+      expect.objectContaining({ modelType: 'Property', idShort: 'StartTime', value: start }),
+      expect.objectContaining({ modelType: 'Property', idShort: 'EndTime', value: new Date(Date.parse(stop) - 1).toISOString() }),
+      expect.objectContaining({ idShort: 'Fields', value: '["rpm"]' }),
+    ])
+    expect(vm.timeSeriesValues).toEqual([[{ time: start, value: 1200 }]])
+    expect(vm.hasFetched).toBe(true)
+  })
+
   it('returns early for InternalSegment fetch when mandatory selections are missing', () => {
     const wrapper = createWrapper()
     const vm = wrapper.vm as any

@@ -7,7 +7,14 @@ test('ReadRecords results survive tree navigation and paginate without persisten
   await expect(page).toHaveURL(/path=/)
   await page.getByText('ReadRecords', { exact: true }).first().click()
   await expect(page).toHaveURL(/ReadRecords/)
+  await expect(page.getByRole('region', { name: 'Select range', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Apply range', exact: true }).click()
+  const invocationPromise = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/ReadRecords/invoke'))
   await page.getByRole('button', { name: 'execute', exact: true }).click()
+  const invocation = await invocationPromise
+  const argumentsArray = invocation.postDataJSON().inputArguments
+  expect(argumentsArray.find((argument: { value: { idShort: string, value: string } }) => argument.value.idShort === 'StartTime').value.value).toBe('2026-11-24T09:00:00.000Z')
+  expect(argumentsArray.find((argument: { value: { idShort: string, value: string } }) => argument.value.idShort === 'EndTime').value.value).toBe('2026-11-24T11:00:00.000Z')
 
   await expect(page.getByLabel('Records (25)', { exact: true })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Temperature [°C]', exact: true })).toBeVisible()

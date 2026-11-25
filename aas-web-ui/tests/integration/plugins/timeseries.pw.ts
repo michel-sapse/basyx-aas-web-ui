@@ -128,18 +128,28 @@ test('timeseries plugin is reachable in the example runtime', async ({ page }) =
   await expect(fetchButton).toBeVisible({ timeout: 30_000 })
   const [linkedResponse] = await Promise.all([
     page.waitForResponse(
-      resp => resp.request().method() === 'POST' && resp.url().includes('/api/v2/query'),
+      resp => resp.request().method() === 'POST' && (resp.url().includes('/api/v2/query') || resp.url().endsWith('/ReadRecords/invoke')),
       { timeout: 30_000 },
     ),
     fetchButton.click({ force: true }),
   ])
   expect(linkedResponse.ok()).toBeTruthy()
   const query = linkedResponse.request().postData() || ''
-  const rangeMatch = query.match(/range\(start: (\d{4}-\d{2}-\d{2}T.*?Z), stop: (\d{4}-\d{2}-\d{2}T.*?Z)\)/)
-  expect(rangeMatch).not.toBeNull()
-  expect(Date.parse(rangeMatch![2]) - Date.parse(rangeMatch![1])).toBe(5 * 60_000)
-  expect(query).toMatch(/aggregateWindow\(every: \d+ms/)
-  expect(query).not.toMatch(/v\.(timeRangeStart|timeRangeStop|windowPeriod)/)
+  if (linkedResponse.url().endsWith('/ReadRecords/invoke')) {
+    const inputs = JSON.parse(query).inputArguments
+    const start = inputs.find((argument: any) => argument.value.idShort === 'StartTime').value
+    const end = inputs.find((argument: any) => argument.value.idShort === 'EndTime').value
+    expect(start.modelType).toBe('Property')
+    expect(end.modelType).toBe('Property')
+    expect(Date.parse(end.value) + 1 - Date.parse(start.value)).toBe(5 * 60_000)
+    expect((await linkedResponse.json()).executionState).toBe('Completed')
+  } else {
+    const rangeMatch = query.match(/range\(start: (\d{4}-\d{2}-\d{2}T.*?Z), stop: (\d{4}-\d{2}-\d{2}T.*?Z)\)/)
+    expect(rangeMatch).not.toBeNull()
+    expect(Date.parse(rangeMatch![2]) - Date.parse(rangeMatch![1])).toBe(5 * 60_000)
+    expect(query).toMatch(/aggregateWindow\(every: \d+ms/)
+    expect(query).not.toMatch(/v\.(timeRangeStart|timeRangeStop|windowPeriod)/)
+  }
 
   const chartTypeSelect = page.getByRole('combobox', { name: 'Chart Type' })
   await chartTypeSelect.click({ force: true })
@@ -147,3 +157,79 @@ test('timeseries plugin is reachable in the example runtime', async ({ page }) =
   await expect(chartTypeSelect).toHaveValue('Line Chart')
   await expect(page.getByRole('application', { name: /line chart/i })).toBeVisible({ timeout: 30_000 })
 })
+
+for (const theme of ['light', 'dark']) {
+  test('ReadRecords Figma range picker: ' + theme, async ({ page }) => {
+    await page.addInitScript(value => localStorage.setItem('theme', value), theme)
+    await page.goto('/', { waitUntil: 'networkidle' })
+    await page.getByText('SensorExampleAAS').first().click()
+    await page.getByText('TimeSeries', { exact: true }).first().click()
+    await page.getByText('ReadRecords', { exact: true }).first().click()
+    await page.getByRole('button', { name: 'Element Details', exact: true }).click()
+    const execute = page.getByRole('button', { name: 'execute', exact: true })
+    const summary = page.locator('.range-summary-value')
+    const picker = page.getByRole('region', { name: 'Select range', exact: true })
+    await expect(picker).toBeVisible()
+    await expect(execute).toBeDisabled()
+    const offset = picker.getByRole('combobox', { name: 'Time zone fixed offset' })
+    await offset.click()
+    await page.getByRole('option', { name: 'UTC+01:00', exact: true }).click()
+    await picker.getByRole('textbox', { name: 'Start date', exact: true }).fill('Nov 19, 2026')
+    await picker.getByRole('textbox', { name: 'End date', exact: true }).fill('Nov 25, 2026')
+    for (const bound of ['Start', 'End']) {
+      for (const [part, value] of [['hour', '12'], ['minute', '00'], ['second', '43'], ['milliseconds', '815'], ['AM/PM', 'PM']]) {
+        await picker.getByRole('combobox', { name: bound + ' ' + part, exact: true }).fill(value)
+      }
+    }
+    await expect(picker.locator('.calendar-marker')).toHaveCount(2)
+    await expect(picker.locator('.calendar-between')).toHaveCount(5)
+    const marker = picker.getByRole('grid').getByRole('button', { name: /19.*November|November.*19/ })
+    expect(await marker.evaluate(button => getComputedStyle(button).color)).toBe('rgb(255, 255, 255)')
+    const bandColor = await picker.locator('.calendar-between').first().evaluate(cell => getComputedStyle(cell, '::before').backgroundColor)
+    expect(bandColor).toMatch(/rgba/)
+    const bodyBox = await picker.locator('.range-form').boundingBox()
+    const sidebarBox = await picker.locator('.range-sidebar').boundingBox()
+    expect(sidebarBox!.width / bodyBox!.width).toBeCloseTo(0.295, 1)
+    await picker.screenshot({ path: 'test-results/readrecords-range-' + theme + '.png' })
+    await picker.getByRole('combobox', { name: 'End AM/PM', exact: true }).press('Enter')
+    await expect(picker).toBeVisible()
+    await expect(summary).toContainText('Nov 19, 2026, 12:00:43.815 → Nov 25, 2026, 12:00:43.815')
+    await expect(page.getByText('6 days · Custom range', { exact: true })).toBeVisible()
+
+    await picker.getByRole('combobox', { name: 'End milliseconds', exact: true }).fill('900')
+    await picker.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(picker.getByRole('combobox', { name: 'End milliseconds', exact: true })).toHaveValue('815')
+    // Use a live-data range for the real query, independent of illustrative dates.
+    await picker.getByRole('button', { name: 'Last 24 hours', exact: true }).click()
+    await picker.getByRole('button', { name: 'Apply range', exact: true }).click()
+    await expect(execute).toBeEnabled()
+    await page.getByRole('checkbox', { name: 'Run asynchronously' }).uncheck()
+    const [response] = await Promise.all([
+      page.waitForResponse(res => res.request().method() === 'POST' && res.url().endsWith('/ReadRecords/invoke')),
+      execute.click(),
+    ])
+    expect(response.ok()).toBeTruthy()
+    const inputs = JSON.parse(response.request().postData()!).inputArguments
+    expect(inputs.map((argument: any) => argument.value.idShort)).toEqual(['StartTime', 'EndTime', 'Fields'])
+    const start = inputs[0].value.value
+    const end = inputs[1].value.value
+    expect(start).toMatch(/\.\d{3}Z$/)
+    expect(end).toMatch(/\.\d{3}Z$/)
+    const result = await response.json()
+    expect(result.executionState).toBe('Completed')
+    const records = JSON.parse(result.outputArguments.find((argument: any) => argument.value.idShort === 'Records').value.value)
+    expect(records.length).toBeGreaterThan(0)
+    expect(records.every((record: any) => Date.parse(record.time) >= Date.parse(start) && Date.parse(record.time) <= Date.parse(end))).toBe(true)
+
+    await page.setViewportSize({ width: 375, height: 812 })
+    await picker.getByRole('button', { name: 'Clear range', exact: true }).click()
+    await expect(picker.getByRole('button', { name: 'Apply range', exact: true })).toBeDisabled()
+    await expect(picker.locator('.calendar-marker')).toHaveCount(0)
+    await expect(execute).toBeDisabled()
+    const box = await picker.getByRole('grid').boundingBox()
+    expect(box!.x + box!.width).toBeLessThanOrEqual(375)
+    await picker.screenshot({ path: 'test-results/readrecords-range-mobile-' + theme + '.png' })
+    await picker.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(execute).toBeEnabled()
+  })
+}

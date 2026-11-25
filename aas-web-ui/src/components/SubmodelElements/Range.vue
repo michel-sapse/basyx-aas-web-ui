@@ -4,7 +4,10 @@
       <v-list-item-title class="text-title-small mt-2">{{ 'Range: ' }}</v-list-item-title>
     </v-list-item>
 
-    <v-card v-if="rangeObject" class="pt-10 pb-5 px-3" color="elevatedCard">
+    <TimespanRangeInput v-if="isTimespanRange(rangeObject)" :is-editable="false" :range-object="rangeObject" />
+    <div v-if="isTimespanRange(rangeObject)" class="text-body-small mt-2">Select the ReadRecords operation to choose a timespan and execute it.</div>
+
+    <v-card v-else-if="rangeObject" class="pt-10 pb-5 px-3" color="elevatedCard">
       <v-range-slider
         v-model="range"
         class="align-center"
@@ -24,6 +27,7 @@
 </template>
 
 <script lang="ts" setup>
+  import { isTimespanRange } from '@/components/Plugins/Submodels/TimeSeries/timespan'
   import { useConceptDescriptionHandling } from '@/composables/AAS/ConceptDescriptionHandling'
 
   const props = defineProps({

@@ -36,8 +36,17 @@
                 variableType.name + ':'
               }}</v-list-item-title>
             </v-list-item>
+
+            <ReadRecordsRangePicker
+              v-if="variableType.type === 'inputVariables' && readRecordsBounds"
+              :disabled="!variablesEditable || loading"
+              :end-value="pickerTimestamp(readRecordsBounds.end.value)"
+              :start-value="pickerTimestamp(readRecordsBounds.start.value)"
+              @editing="rangeEditing = $event"
+              @update-range="updateReadRecordsRange"
+            />
             <!-- List with the Fields belonging to the Variable Type -->
-            <v-card v-for="(variable, i) in localOperationObject[variableType.type]" :key="i" class="mb-3">
+            <v-card v-for="(variable, i) in visibleVariables(variableType.type)" :key="i" class="mb-3">
               <!-- Variable Description -->
               <DescriptionElement
                 v-if="variable.value && variable.value.description"
@@ -49,8 +58,15 @@
               <v-divider v-if="variable.value && variable.value.description" class="mt-1" />
               <!-- Variable Value -->
               <!-- Value Representation depending on the ModelType -->
+              <TimespanRangeInput
+                v-if="variableType.type === 'inputVariables' && isTimespanRange(variable.value)"
+                :is-editable="variablesEditable && !loading"
+                :range-object="variable.value"
+                @update-range="updateOperationRange($event, variable.value)"
+              />
+
               <Property
-                v-if="variable.value.modelType === 'Property'"
+                v-else-if="variable.value.modelType === 'Property'"
                 :is-editable="variablesEditable"
                 :is-operation-variable="true"
                 :property-object="variable.value"
@@ -125,6 +141,7 @@
             <v-btn
               class="text-buttonText"
               color="primary"
+              :disabled="rangeIncomplete"
               :loading="loading"
               size="small"
               @click="executeOperation()"
@@ -148,6 +165,9 @@
 </template>
 
 <script lang="ts" setup>
+  import { type RecordRange, recordRangeValid } from '@/components/Plugins/Submodels/TimeSeries/fixedOffsetRange'
+  import { parseAbsoluteDate } from '@/components/Plugins/Submodels/TimeSeries/timeRange'
+  import { isTimespanRange, timespanHasBounds } from '@/components/Plugins/Submodels/TimeSeries/timespan'
   import { useRequestHandling } from '@/composables/RequestHandling'
   import { useNavigationStore } from '@/store/NavigationStore'
   import { useOperationResultStore } from '@/store/OperationResultStore'
@@ -183,8 +203,22 @@
   ])
   const loading = ref(false)
   const invokeAsynchronously = ref(true)
-  const variablesEditable = computed(() => props.isEditable && props.invocationAvailable)
   const lastInvocation = computed(() => operationResultStore.forOperation(props.operationObject.path, props.operationObject))
+  const rangeEditing = ref(false)
+  const readRecordsBounds = computed(() => {
+    if (localOperationObject.value.idShort !== 'ReadRecords') return null
+    const inputs = localOperationObject.value.inputVariables || []
+    const bound = (name: string) => inputs.find((variable: any) => variable.value?.idShort === name
+      && variable.value.modelType === 'Property' && variable.value.valueType === 'xs:dateTime')?.value
+    const start = bound('StartTime')
+    const end = bound('EndTime')
+    return start && end ? { start, end } : null
+  })
+  const rangeIncomplete = computed(() => rangeEditing.value || timespanIncomplete.value
+    || Boolean(readRecordsBounds.value && !recordRangeValid(pickerTimestamp(readRecordsBounds.value.start.value), pickerTimestamp(readRecordsBounds.value.end.value))))
+  const hasTimespanInput = computed(() => localOperationObject.value.inputVariables?.some((variable: any) => isTimespanRange(variable.value)))
+  const timespanIncomplete = computed(() => localOperationObject.value.inputVariables?.some((variable: any) => isTimespanRange(variable.value) && !timespanHasBounds(variable.value)))
+  const variablesEditable = computed(() => (props.isEditable || hasTimespanInput.value || Boolean(readRecordsBounds.value)) && props.invocationAvailable)
   let invocationController: AbortController | undefined
   let invocationGeneration = 0
 
@@ -208,6 +242,7 @@
 
   // Function to initialize the Operation
   function initOperation (): void {
+    rangeEditing.value = false
     // Create an independent local copy without the circular tree parent links.
     localOperationObject.value = JSON.parse(
       JSON.stringify(props.operationObject, (key, value) => key === 'parent' ? undefined : value),
@@ -229,11 +264,35 @@
     }
   }
 
+  function visibleVariables (type: string): any[] {
+    return (localOperationObject.value[type] || []).filter((variable: any) => !(type === 'inputVariables'
+      && readRecordsBounds.value && ['StartTime', 'EndTime'].includes(variable.value?.idShort)))
+  }
+
+  // Adapt valid backend lexical values for the picker without rewriting the
+  // invocation arguments merely because the view was opened.
+  function pickerTimestamp (value: unknown): string {
+    if (typeof value !== 'string' || !/(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return ''
+    const date = parseAbsoluteDate(value)
+    return date ? date.toISOString() : ''
+  }
+
+  function updateReadRecordsRange (range: RecordRange): void {
+    if (!readRecordsBounds.value) return
+    readRecordsBounds.value.start.value = range.start
+    readRecordsBounds.value.end.value = range.end
+  }
+
   function clearFields (): void {
     operationResultStore.forget(props.operationObject.path)
     if (localOperationObject.value.inputVariables) {
       for (const variable of localOperationObject.value.inputVariables) {
-        variable.value.value = null
+        if (variable.value.modelType === 'Range') {
+          variable.value.min = null
+          variable.value.max = null
+        } else {
+          variable.value.value = null
+        }
       }
     }
 
@@ -252,6 +311,9 @@
 
   // Function to execute the Operation
   async function executeOperation (): Promise<void> {
+    if (rangeIncomplete.value) {
+      return
+    }
     cancelInvocation()
     operationResultStore.forget(props.operationObject.path)
     localOperationObject.value.outputVariables = JSON.parse(canonicalTreeElementJson(props.operationObject.outputVariables ?? []))
@@ -636,6 +698,11 @@
     invocationController?.abort()
     invocationController = undefined
     loading.value = false
+  }
+
+  function updateOperationRange (bounds: { min: string, max: string }, variable: any): void {
+    variable.min = bounds.min
+    variable.max = bounds.max
   }
 
   function updateOperationVariable (e: any, variable: any): void {
