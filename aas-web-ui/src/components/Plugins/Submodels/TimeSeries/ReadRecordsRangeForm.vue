@@ -7,7 +7,6 @@
         v-for="item in QUICK_RANGES"
         :key="item"
         :aria-pressed="preset === item"
-        width="100%"
         class="range-preset"
         :class="{ selected: preset === item }"
         :disabled="disabled"
@@ -16,6 +15,7 @@
         rounded="sm"
         type="button"
         variant="text"
+        width="100%"
         @click="emit('preset', item)"
       >
         {{ item }}
