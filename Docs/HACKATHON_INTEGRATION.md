@@ -5,7 +5,7 @@ It is not the source branch for an upstream feature PR.
 
 ## Included branches
 
-- `feature/operation-result-table` (`3c04530`): output rendering, temporary
+- `feature/operation-result-table` (`30e598d`): output rendering, temporary
   invocation results, search, filters, column selection and CSV export.
 - `feat/readrecords-date-time-picker` (`254bc94`): ReadRecords date-time selection
   and Timespan Range input.
@@ -15,6 +15,10 @@ It is not the source branch for an upstream feature PR.
 
 All three features are included. Query favorites are saved search definitions,
 not bookmarks of individual assets.
+
+The record table also supports sparse production-style records: it builds the
+union of scalar metric columns across all returned records, preserves each
+record separately and displays missing cells as an em dash (empty in CSV).
 
 ## Integration decisions
 
