@@ -82,6 +82,16 @@ test('ReadRecords results survive tree navigation and paginate without persisten
 })
 
 test('sparse metric records keep the column table and export empty cells for missing metrics', async ({ page }) => {
+  const schema = [
+    { modelType: 'Property', idShort: 'Time', valueType: 'xs:dateTime' },
+    { modelType: 'Property', idShort: 'node_load1', valueType: 'xs:double' },
+    { modelType: 'Property', idShort: 'node_memory_MemAvailable_bytes', valueType: 'xs:double', value: '999' },
+    { modelType: 'Property', idShort: 'node_memory_MemTotal_bytes', valueType: 'xs:double' },
+    { modelType: 'Property', idShort: 'node_network_transmit_bytes_rate5m', valueType: 'xs:double' },
+  ]
+  await page.route('**/submodel-elements/Metadata', route => route.fulfill({
+    json: { modelType: 'SubmodelElementCollection', idShort: 'Metadata', value: [{ modelType: 'SubmodelElementCollection', idShort: 'Record', value: schema }] },
+  }))
   const records = Array.from({ length: 25 }, (_, index) => ({
     modelType: 'SubmodelElementCollection', idShort: `Record${String(index + 1).padStart(3, '0')}`,
     value: [
@@ -103,10 +113,11 @@ test('sparse metric records keep the column table and export empty cells for mis
   await expect(page.getByLabel('Records (25)', { exact: true })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'node_load1', exact: true })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'node_network_transmit_bytes_rate5m', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'node_memory_MemAvailable_bytes', exact: true })).toBeVisible()
   const rows = page.locator('.records-table tbody tr')
   await expect(rows).toHaveCount(10)
-  await expect(rows.nth(0).getByLabel('No value')).toHaveCount(1)
-  await expect(rows.nth(1).getByLabel('No value')).toHaveCount(1)
+  await expect(rows.nth(0).getByLabel('No value')).toHaveCount(3)
+  await expect(rows.nth(1).getByLabel('No value')).toHaveCount(3)
   await page.getByRole('textbox', { name: 'Search records', exact: true }).fill('Record002')
   await expect(rows).toHaveCount(1)
   await expect(rows.first()).toContainText('141783.53703703705')
@@ -120,6 +131,6 @@ test('sparse metric records keep the column table and export empty cells for mis
     chunks.push(Buffer.from(chunk))
   }
   const csv = Buffer.concat(chunks).toString('utf8')
-  expect(csv).toContain('"Record002","2026-11-24T09:05:00.000Z","","141783.53703703705"')
+  expect(csv).toContain('"Record002","2026-11-24T09:05:00.000Z","","","","141783.53703703705"')
   expect(csv).not.toContain('(no value)')
 })

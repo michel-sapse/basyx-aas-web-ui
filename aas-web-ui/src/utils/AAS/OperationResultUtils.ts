@@ -7,11 +7,19 @@ export type OperationResultRow = {
   valueType: string
 }
 
+function isScalarProperty (field: OperationResultElement): field is OperationResultElement & { idShort: string } {
+  return field.modelType === 'Property' && typeof field.idShort === 'string' && field.idShort.length > 0
+    && (field.value == null || ['string', 'number', 'boolean'].includes(typeof field.value))
+}
+
 // Pivot scalar record collections, including sparse records with different
 // metrics. Preserve each record independently; never fill or aggregate values.
-export function operationRecordTable (element: OperationResultElement): { headers: { title: string, key: string }[], items: Record<string, string>[], fields: OperationResultElement[] } | undefined {
+export function operationRecordTable (element: OperationResultElement, schema?: OperationResultElement[]): { headers: { title: string, key: string }[], items: Record<string, string>[], fields: OperationResultElement[], undeclaredFields: string[] } | undefined {
   const records = resultChildren(element)
-  if (element.modelType !== 'SubmodelElementCollection' || !records?.length) {
+  if (element.modelType !== 'SubmodelElementCollection' || !records) {
+    return
+  }
+  if (records.length === 0 && !schema?.length) {
     return
   }
   const recordFields = records.map(record => record.modelType === 'SubmodelElementCollection' ? resultChildren(record) : undefined)
@@ -23,8 +31,7 @@ export function operationRecordTable (element: OperationResultElement): { header
   for (const record of recordFields) {
     const values = new Map<string, unknown>()
     for (const field of record) {
-      if (field.modelType !== 'Property' || typeof field.idShort !== 'string' || !field.idShort || values.has(field.idShort)
-        || (field.value != null && !['string', 'number', 'boolean'].includes(typeof field.value))) {
+      if (!isScalarProperty(field) || values.has(field.idShort)) {
         return
       }
       const definition = fieldDefinitions.get(field.idShort)
@@ -39,10 +46,25 @@ export function operationRecordTable (element: OperationResultElement): { header
     }
     valuesByRecord.push(values)
   }
-  const fields = [...fieldDefinitions.values()]
-  const names = [...fieldDefinitions.keys()]
+  const declared = new Map<string, OperationResultElement>()
+  for (const field of schema ?? []) {
+    if (!isScalarProperty(field) || !field.valueType || declared.has(field.idShort)) {
+      return
+    }
+    declared.set(field.idShort, field)
+  }
+  const undeclaredFields = schema ? [...fieldDefinitions.keys()].filter(name => !declared.has(name)) : []
+  const ordered = new Map(declared)
+  for (const [name, field] of fieldDefinitions) {
+    if (!ordered.has(name)) {
+      ordered.set(name, field)
+    }
+  }
+  const fields = [...ordered.values()]
+  const names = [...ordered.keys()]
   return {
     fields,
+    undeclaredFields,
     headers: [{ title: 'Record', key: 'record' }, ...names.map((name, index) => ({ title: `${name} (${fields[index].valueType})`, key: `field${index}` }))],
     items: records.map((record, index) => Object.fromEntries([
       ['record', record.idShort || String(index + 1)],

@@ -226,8 +226,11 @@ temporary result. The `clear` action clears it as well.
 
 Collections of scalar records are displayed as one record per row and one
 Property per column, preserving lexical values. Sparse records with different
-metrics use the union of all fields across the entire result, not just the first
-record or current page. Missing cells show an em dash and export as empty CSV
+metrics use the declared `Metadata.Record` schema for column order, names and
+types. Every declared column remains visible even if no returned record contains
+that metric. Undeclared returned fields are appended and labeled explicitly.
+Only when usable metadata is unavailable is the schema inferred from the union
+of returned fields across the whole result. Missing cells show an em dash and export as empty CSV
 cells; values are never aggregated, interpolated or carried forward. Conflicting
 types/semantic IDs, duplicate field names or nested structures retain the generic
 element/value table. The operation result renderer reads `Metadata.Record` from the owning

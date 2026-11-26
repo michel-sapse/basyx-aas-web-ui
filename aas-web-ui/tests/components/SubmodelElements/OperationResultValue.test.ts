@@ -19,7 +19,7 @@ function render () {
     props: { element: records, operationPath: 'http://localhost:8081/submodels/id/submodel-elements/ReadRecords' },
     global: { stubs: {
       'v-data-table': { props: ['headers', 'items'], template: '<div>{{ headers }} {{ items }}</div>' },
-      'OperationRecordsTable': { props: ['title', 'rows', 'columns'], template: '<div><div class="text-title-small">{{ title }} ({{ rows.length }})</div>{{ columns }} {{ rows }}</div>' },
+      'OperationRecordsTable': { name: 'OperationRecordsTable', props: ['title', 'rows', 'columns'], template: '<div><div class="text-title-small">{{ title }} ({{ rows.length }})</div>{{ columns }} {{ rows }}</div>' },
     } },
   })
 }
@@ -48,6 +48,18 @@ describe('OperationResultValue metadata', () => {
     expect(wrapper.text()).toContain('°C')
     expect(wrapper.text()).toContain('xs:integer')
     expect(records).toEqual(before)
+    wrapper.unmount()
+  })
+  it('shows every metadata column in schema order even when the response omits a metric', async () => {
+    const schema = [{ ...temperature, idShort: 'Humidity', value: '999' }, { ...temperature, value: undefined }]
+    mocks.fetchSme.mockResolvedValue({ value: [{ idShort: 'Record', value: schema }] })
+    const wrapper = render()
+    await flushPromises()
+    const table = wrapper.getComponent({ name: 'OperationRecordsTable' })
+    expect(table.props('columns').map((column: { title: string }) => column.title)).toEqual(['Record', 'Humidity', 'Temperature'])
+    expect(table.props('rows')[0]).toEqual({ record: 'Record1', field0: '(no value)', field1: '20' })
+    expect(mocks.fetchCds).toHaveBeenCalledTimes(2)
+    expect(schema[0].value).toBe('999')
     wrapper.unmount()
   })
   it('does not infer units when the returned type disagrees with metadata', async () => {

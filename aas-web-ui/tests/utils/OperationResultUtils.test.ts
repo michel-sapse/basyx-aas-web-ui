@@ -2,6 +2,34 @@ import { describe, expect, it } from 'vitest'
 import { operationRecordTable, operationResultRows } from '@/utils/AAS/OperationResultUtils'
 
 describe('operationResultRows', () => {
+  it('takes column order and types from metadata, never using metadata example values as measurements', () => {
+    const time = { modelType: 'Property', idShort: 'Time', valueType: 'xs:dateTime', value: '2026-11-10T23:00:07.023Z' }
+    const load = { modelType: 'Property', idShort: 'node_load1', valueType: 'xs:double', value: '0.17' }
+    const schema = [
+      { modelType: 'Property', idShort: 'network', valueType: 'xs:double', value: '999' },
+      { ...time, value: undefined },
+      { ...load, value: undefined },
+    ]
+    const table = operationRecordTable({ modelType: 'SubmodelElementCollection', value: [
+      { modelType: 'SubmodelElementCollection', idShort: 'Record001', value: [time, load] },
+    ] }, schema)
+    expect(table?.fields.map(field => field.idShort)).toEqual(['network', 'Time', 'node_load1'])
+    expect(table?.items[0]).toEqual({ record: 'Record001', field0: '(no value)', field1: time.value, field2: '0.17' })
+    expect(table?.undeclaredFields).toEqual([])
+    const empty = operationRecordTable({ modelType: 'SubmodelElementCollection', value: [] }, schema)
+    expect(empty?.fields).toEqual(schema)
+    expect(empty?.items).toEqual([])
+  })
+  it('appends and identifies undeclared returned fields without discarding them', () => {
+    const declared = { modelType: 'Property', idShort: 'Time', valueType: 'xs:dateTime' }
+    const extra = { modelType: 'Property', idShort: 'ExtraMetric', valueType: 'xs:double', value: '1.5' }
+    const table = operationRecordTable({ modelType: 'SubmodelElementCollection', value: [
+      { modelType: 'SubmodelElementCollection', value: [extra] },
+    ] }, [declared])
+    expect(table?.fields).toEqual([declared, extra])
+    expect(table?.undeclaredFields).toEqual(['ExtraMetric'])
+    expect(table?.items[0].field1).toBe('1.5')
+  })
   it('pivots uniform records by field name and preserves lexical values', () => {
     const time = { modelType: 'Property', idShort: 'time', valueType: 'xs:dateTime', value: '2026-11-24T09:00:00Z' }
     const temperature = { modelType: 'Property', idShort: 'Temperature', valueType: 'xs:integer', value: '20' }

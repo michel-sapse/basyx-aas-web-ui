@@ -12,6 +12,7 @@ export function useOperationRecordMetadata (
   const { fetchSme } = useSMRepositoryClient()
   const { fetchCds, unitSuffix } = useConceptDescriptionHandling()
   const units = ref<Record<string, string>>({})
+  const schema = ref<OperationResultElement[]>()
   const notice = ref('')
   let generation = 0
 
@@ -19,9 +20,11 @@ export function useOperationRecordMetadata (
     idShort: field.idShort, valueType: field.valueType, semanticId: field.semanticId,
   }))))
 
-  watch(() => [operationPath(), fieldSignature.value], async () => {
+  // Reload schema for a fresh invocation even when its returned field names match.
+  watch(() => [operationPath(), fieldSignature.value, fields()], async () => {
     const current = ++generation
     units.value = {}
+    schema.value = undefined
     notice.value = ''
     const path = operationPath()
     const requestedFields = fields()
@@ -48,18 +51,23 @@ export function useOperationRecordMetadata (
         notice.value = 'Record metadata unavailable; values are shown without inferred units.'
         return
       }
+      if (definitions.length === 0 || definitions.some(field => field.modelType !== 'Property' || typeof field.idShort !== 'string' || !field.idShort || typeof field.valueType !== 'string' || !field.valueType)
+        || new Set(definitions.map(field => field.idShort)).size !== definitions.length) {
+        notice.value = 'Record metadata is not a scalar column schema; using returned fields instead.'
+        return
+      }
+      schema.value = definitions
       let mismatch = false
-      const entries = await Promise.all(requestedFields.map(async field => {
-        const matches = definitions.filter(candidate => candidate.idShort === field.idShort)
-        const definition = matches.length === 1 ? matches[0] : undefined
-        const returnedIds = field.semanticId?.keys?.map(key => key.value) ?? []
-        const definedIds = definition?.semanticId?.keys?.map(key => key.value) ?? []
-        if (!definition || definition.valueType !== field.valueType || (returnedIds.length > 0 && !returnedIds.some(id => definedIds.includes(id)))) {
+      const entries = await Promise.all(definitions.map(async definition => {
+        const field = requestedFields.find(field => field.idShort === definition.idShort)
+        const returnedIds = field?.semanticId?.keys?.map(key => key.value) ?? []
+        const definedIds = definition.semanticId?.keys?.map(key => key.value) ?? []
+        if (field && (definition.valueType !== field.valueType || (returnedIds.length > 0 && !returnedIds.some(id => definedIds.includes(id))))) {
           mismatch = true
-          return [field.idShort ?? '', '']
+          return [definition.idShort ?? '', '']
         }
         const cds = await fetchCds(definition)
-        return [field.idShort ?? '', unitSuffix({ conceptDescriptions: cds })]
+        return [definition.idShort ?? '', unitSuffix({ conceptDescriptions: cds })]
       }))
       if (current !== generation) {
         return
@@ -77,5 +85,5 @@ export function useOperationRecordMetadata (
     generation++
   })
 
-  return { units, notice }
+  return { units, notice, schema }
 }
