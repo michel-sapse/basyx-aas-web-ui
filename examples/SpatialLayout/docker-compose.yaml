@@ -1,0 +1,78 @@
+name: basyx-spatial-layout
+services:
+  db:
+    image: postgres:18.4
+    container_name: spatial-layout-postgres
+    environment:
+      POSTGRES_USER: spatial
+      POSTGRES_PASSWORD: spatial-demo
+      POSTGRES_DB: spatialLayout
+    volumes:
+      - spatial-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spatial -d spatialLayout"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  basyx-configuration:
+    image: eclipsebasyx/basyxconfigurationservice-go:SNAPSHOT
+    container_name: spatial-layout-configuration
+    environment: &database
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: spatial
+      POSTGRES_PASSWORD: spatial-demo
+      POSTGRES_DBNAME: spatialLayout
+    depends_on:
+      db:
+        condition: service_healthy
+
+  aas-env:
+    image: eclipsebasyx/aasenvironment-go:SNAPSHOT
+    container_name: spatial-layout-aas-env
+    command: ["/app/aasenvironmentservice"]
+    ports:
+      - "19081:8081"
+    environment:
+      <<: *database
+      SERVER_PORT: 8081
+      CORS_ALLOWEDORIGINS: "*"
+      CORS_ALLOWEDHEADERS: "*"
+      CORS_ALLOWEDCREDENTIALS: "true"
+      CORS_ALLOWEDMETHODS: GET,POST,PUT,PATCH,DELETE,OPTIONS
+      ABAC_ENABLED: "false"
+      GENERAL_AASREGISTRYINTEGRATION: "true"
+      GENERAL_SUBMODELREGISTRYINTEGRATION: "true"
+      GENERAL_DISCOVERYINTEGRATION: "true"
+      GENERAL_EXTERNALURL: http://localhost:19081
+      GENERAL_AAS_PRECONFIG_PATHS: /app/preconfiguration/SpatialLayoutDemo.aasx
+    volumes:
+      - ./aas:/app/preconfiguration:ro
+    depends_on:
+      basyx-configuration:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  aas-web-ui:
+    image: spatial-layout-aas-ui:local
+    pull_policy: never
+    build:
+      context: ../../aas-web-ui/dist
+      dockerfile: ../../examples/SpatialLayout/Dockerfile.local
+    container_name: spatial-layout-aas-ui
+    ports:
+      - "14000:3000"
+    volumes:
+      - ./basyx-infra.yml:/basyx-infra.yml:ro
+    environment:
+      ENDPOINT_CONFIG_AVAILABLE: "true"
+      ALLOW_EDITING: "true"
+    depends_on:
+      aas-env:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  spatial-db:

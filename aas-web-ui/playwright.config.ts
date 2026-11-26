@@ -52,6 +52,13 @@ export default defineConfig({
         baseURL: timeseriesBaseURL,
       },
     },
+    {
+      name: 'integration-spatial',
+      testMatch: '**/plugins/spatial-layout.pw.ts',
+      use: {
+        baseURL: process.env.IT_SPATIAL_URL ?? 'http://localhost:14000',
+      },
+    },
   ],
   webServer: disableWebServer
     ? undefined
