@@ -3,11 +3,22 @@
     <div class="range-summary-line">
       <div class="range-summary-content">
         <div class="range-summary-label">Time range</div>
+
         <div v-if="appliedValid" aria-live="polite" class="range-summary-value" role="status">
           {{ formatRangeTimestamp(startValue, appliedOffset, hourFormat) }}<span class="range-summary-arrow">{{ ' → ' }}</span>{{ formatRangeTimestamp(endValue, appliedOffset, hourFormat) }}
         </div>
       </div>
-      <v-btn class="range-clear" color="primary" :disabled="disabled" :elevation="0" height="40" rounded="sm" variant="flat" @click="clearDraft">Clear range</v-btn>
+
+      <v-btn
+        class="range-clear"
+        color="primary"
+        :disabled="disabled"
+        :elevation="0"
+        height="40"
+        rounded="sm"
+        variant="flat"
+        @click="clearDraft"
+      >Clear range</v-btn>
     </div>
 
     <v-card
