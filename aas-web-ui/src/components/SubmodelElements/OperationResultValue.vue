@@ -4,6 +4,10 @@
 
     <div v-if="metadataNotice" class="text-caption mb-2" role="status">{{ metadataNotice }}</div>
 
+    <div v-if="recordTable && recordTable.undeclaredFields.length > 0" class="text-caption mb-2" role="status">
+      Additional returned fields not declared in Record metadata: {{ recordTable.undeclaredFields.join(', ') }}
+    </div>
+
     <OperationRecordsTable v-if="recordTable" :columns="recordColumns" :rows="recordTable.items" :title="nameToDisplay(element)" />
 
     <v-data-table
@@ -43,15 +47,20 @@
     }
     return name
   })
-  const recordTable = computed(() => operationRecordTable(props.element))
-  const { units, notice: metadataNotice } = useOperationRecordMetadata(
+  const returnedTable = computed(() => operationRecordTable(props.element))
+  const { units, notice: metadataNotice, schema } = useOperationRecordMetadata(
     () => props.operationPath,
-    () => props.element.idShort === 'Records' ? recordTable.value?.fields : undefined,
+    () => props.element.idShort === 'Records' && props.element.modelType === 'SubmodelElementCollection'
+      ? returnedTable.value?.fields ?? []
+      : undefined,
   )
+  const recordTable = computed(() => operationRecordTable(props.element, schema.value))
   const recordColumns = computed<RecordColumn[]>(() => [
     { key: 'record', title: 'Record' },
     ...(recordTable.value?.fields ?? []).map((field, index) => ({
-      key: `field${index}`, title: nameToDisplay(field), valueType: field.valueType, unit: units.value[field.idShort ?? ''],
+      key: `field${index}`,
+      title: `${nameToDisplay(field)}${recordTable.value?.undeclaredFields.includes(field.idShort ?? '') ? ' (undeclared)' : ''}`,
+      valueType: field.valueType, unit: units.value[field.idShort ?? ''],
     })),
   ])
 </script>

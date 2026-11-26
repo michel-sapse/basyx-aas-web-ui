@@ -163,7 +163,7 @@
   const pageRows = computed(() => sortedRows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
   const startRow = computed(() => sortedRows.value.length > 0 ? (page.value - 1) * pageSize.value + 1 : 0)
   const endRow = computed(() => Math.min(page.value * pageSize.value, sortedRows.value.length))
-  const schema = computed(() => JSON.stringify(props.columns.map(column => [column.key, column.valueType])))
+  const schema = computed(() => JSON.stringify(props.columns.map(column => [column.key, column.title, column.valueType])))
   const fieldTypes = computed(() => {
     const groups = new Map<string, string[]>()
     for (const column of visibleColumns.value) {
