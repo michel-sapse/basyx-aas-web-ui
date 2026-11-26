@@ -7,7 +7,7 @@
         v-for="item in QUICK_RANGES"
         :key="item"
         :aria-pressed="preset === item"
-        block
+        width="100%"
         class="range-preset"
         :class="{ selected: preset === item }"
         :disabled="disabled"
@@ -163,7 +163,7 @@
 .range-form { display: grid; grid-template-columns: 180px minmax(0, 1fr); }
 .range-sidebar { display: flex; flex-direction: column; padding: 22px 12px 16px; background: rgba(var(--v-theme-on-surface), 0.035); border-right: 1px solid var(--range-border); }
 .range-sidebar-heading { font-size: 12px; font-weight: 700; color: rgba(var(--v-theme-on-surface), 0.62); padding: 0 12px 15px; }
-.range-preset { justify-content: flex-start; text-align: left; padding: 0 12px; color: rgb(var(--v-theme-on-surface)); font-size: 16px; font-weight: 400; letter-spacing: normal; box-shadow: none; }
+.range-preset { flex: 0 0 auto; justify-content: flex-start; text-align: left; padding: 0 12px; color: rgb(var(--v-theme-on-surface)); font-size: 16px; font-weight: 400; letter-spacing: normal; box-shadow: none; }
 .range-preset :deep(.v-btn__content) { display: flex; width: 100%; justify-content: space-between; align-items: center; }
 .range-preset:hover { background: rgba(var(--v-theme-on-surface), 0.035); }
 .range-preset.selected { background: var(--range-soft, var(--range-tint)); color: var(--range-accent); font-weight: 600; }
@@ -186,7 +186,7 @@
 }
 @container (max-width: 600px) {
   .range-form { grid-template-columns: 1fr; }
-  .range-sidebar { border-right: 0; border-bottom: 1px solid var(--range-border); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .range-sidebar { border-right: 0; border-bottom: 1px solid var(--range-border); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; }
   .range-sidebar-heading, .range-timezone { grid-column: 1 / -1; }
   .range-timezone { padding-top: 12px; }
   .range-main { padding: 16px; }

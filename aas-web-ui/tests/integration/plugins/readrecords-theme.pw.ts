@@ -30,6 +30,14 @@ for (const theme of ['light', 'dark']) {
     })
     const calendar = page.locator('.date-range-calendar')
     const times = page.locator('.range-time-rows')
+    const presets = page.locator('.range-preset')
+    const expectFixedPresetHeight = async () => {
+      for (const preset of await presets.all()) {
+        await expect(preset).toHaveCSS('height', '44px')
+        expect((await preset.boundingBox())!.height).toBe(44)
+      }
+    }
+    await expectFixedPresetHeight()
     await expect.poll(async () => {
       const left = await calendar.boundingBox()
       const right = await times.boundingBox()
@@ -44,6 +52,7 @@ for (const theme of ['light', 'dark']) {
       const bottom = await times.boundingBox()
       return bottom!.y >= top!.y + top!.height
     }).toBe(true)
+    await expectFixedPresetHeight()
     await picker.evaluate(element => {
       (element as HTMLElement).style.width = '320px'
     })
@@ -52,6 +61,7 @@ for (const theme of ['light', 'dark']) {
       const panel = await picker.boundingBox()
       return box!.x + box!.width <= panel!.x + panel!.width
     }).toBe(true)
+    await expectFixedPresetHeight()
     await page.getByRole('button', { name: 'Clear range', exact: true }).click()
     await expect(page.locator('.calendar-marker')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'execute', exact: true })).toBeDisabled()
