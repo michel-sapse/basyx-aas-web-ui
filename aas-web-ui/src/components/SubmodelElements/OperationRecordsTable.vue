@@ -99,6 +99,11 @@
         </div>
       </template>
 
+      <template v-for="column in visibleColumns" :key="column.key" #[`item.${column.key}`]="{ item }">
+        <span v-if="item[column.key] === '(no value)'" aria-label="No value" class="text-medium-emphasis">—</span>
+        <span v-else>{{ item[column.key] }}</span>
+      </template>
+
       <template #no-data>
         {{ rows.length > 0 ? 'No records match the search and filters.' : 'No records returned.' }}
       </template>

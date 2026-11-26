@@ -7,8 +7,8 @@ export type OperationResultRow = {
   valueType: string
 }
 
-// Only pivot uniform collections of scalar Properties; all other AAS shapes
-// retain the generic, lossless element/value view.
+// Pivot scalar record collections, including sparse records with different
+// metrics. Preserve each record independently; never fill or aggregate values.
 export function operationRecordTable (element: OperationResultElement): { headers: { title: string, key: string }[], items: Record<string, string>[], fields: OperationResultElement[] } | undefined {
   const records = resultChildren(element)
   if (element.modelType !== 'SubmodelElementCollection' || !records?.length) {
@@ -18,28 +18,36 @@ export function operationRecordTable (element: OperationResultElement): { header
   if (!recordFields.every((fields): fields is OperationResultElement[] => !!fields?.length)) {
     return
   }
-  const fields = recordFields[0]
-  if (!fields.every(field => field.modelType === 'Property' && typeof field.idShort === 'string' && field.idShort.length > 0)) {
-    return
+  const fieldDefinitions = new Map<string, OperationResultElement>()
+  const valuesByRecord: Map<string, unknown>[] = []
+  for (const record of recordFields) {
+    const values = new Map<string, unknown>()
+    for (const field of record) {
+      if (field.modelType !== 'Property' || typeof field.idShort !== 'string' || !field.idShort || values.has(field.idShort)
+        || (field.value != null && !['string', 'number', 'boolean'].includes(typeof field.value))) {
+        return
+      }
+      const definition = fieldDefinitions.get(field.idShort)
+      if (definition && (definition.valueType !== field.valueType
+        || (definition.semanticId && field.semanticId && JSON.stringify(definition.semanticId) !== JSON.stringify(field.semanticId)))) {
+        return
+      }
+      if (!definition || (!definition.semanticId && field.semanticId)) {
+        fieldDefinitions.set(field.idShort, field)
+      }
+      values.set(field.idShort, field.value)
+    }
+    valuesByRecord.push(values)
   }
-  const names = fields.map(field => field.idShort!)
-  if (new Set(names).size !== names.length) {
-    return
-  }
-  if (!recordFields.every(record => record.length === names.length && names.every((name, index) => {
-    const matches = record.filter(field => field.idShort === name)
-    return matches.length === 1 && matches[0].modelType === 'Property' && matches[0].valueType === fields[index].valueType
-      && (matches[0].value == null || ['string', 'number', 'boolean'].includes(typeof matches[0].value))
-  }))) {
-    return
-  }
+  const fields = [...fieldDefinitions.values()]
+  const names = [...fieldDefinitions.keys()]
   return {
     fields,
     headers: [{ title: 'Record', key: 'record' }, ...names.map((name, index) => ({ title: `${name} (${fields[index].valueType})`, key: `field${index}` }))],
     items: records.map((record, index) => Object.fromEntries([
       ['record', record.idShort || String(index + 1)],
       ...names.map((name, fieldIndex) => {
-        const value = recordFields[index].find(field => field.idShort === name)!.value
+        const value = valuesByRecord[index].get(name)
         return [`field${fieldIndex}`, value == null ? '(no value)' : String(value)]
       }),
     ])),

@@ -224,10 +224,13 @@ to the stored definition; no result values are saved to the backend. Browser
 reload, switching infrastructures, or starting another invocation clears the
 temporary result. The `clear` action clears it as well.
 
-Uniform collections of records are displayed as one record per row and one
-Property per column, preserving lexical values and showing the valueType in
-each header. Non-uniform or nested structures retain the generic element/value
-table. The operation result renderer reads `Metadata.Record` from the owning
+Collections of scalar records are displayed as one record per row and one
+Property per column, preserving lexical values. Sparse records with different
+metrics use the union of all fields across the entire result, not just the first
+record or current page. Missing cells show an em dash and export as empty CSV
+cells; values are never aggregated, interpolated or carried forward. Conflicting
+types/semantic IDs, duplicate field names or nested structures retain the generic
+element/value table. The operation result renderer reads `Metadata.Record` from the owning
 submodel and resolves ConceptDescriptions once per column to show available
 units. It does not infer a unit when a returned field has a different valueType
 or conflicting semantic ID. Missing metadata leaves the values visible and

@@ -80,3 +80,46 @@ test('ReadRecords results survive tree navigation and paginate without persisten
   await expect(page.getByText(/Temporary, read-only result/)).toHaveCount(0)
   await expect(page.getByLabel('Records (25)', { exact: true })).toHaveCount(0)
 })
+
+test('sparse metric records keep the column table and export empty cells for missing metrics', async ({ page }) => {
+  const records = Array.from({ length: 25 }, (_, index) => ({
+    modelType: 'SubmodelElementCollection', idShort: `Record${String(index + 1).padStart(3, '0')}`,
+    value: [
+      { modelType: 'Property', idShort: 'Time', valueType: 'xs:dateTime', value: new Date(Date.parse('2026-11-24T09:00:00Z') + index * 300_000).toISOString() },
+      { modelType: 'Property', idShort: index % 2 === 0 ? 'node_load1' : 'node_network_transmit_bytes_rate5m', valueType: 'xs:double', value: index % 2 === 0 ? '0.17' : '141783.53703703705' },
+    ],
+  }))
+  await page.route('**/submodel-elements/ReadRecords/invoke-async', route => route.fulfill({ status: 405 }))
+  await page.route('**/submodel-elements/ReadRecords/invoke', route => route.fulfill({
+    json: { executionState: 'Completed', success: true, outputArguments: [{ value: { modelType: 'SubmodelElementCollection', idShort: 'Records', value: records } }] },
+  }))
+  await page.goto('/', { waitUntil: 'networkidle' })
+  await page.getByText('SensorExampleAAS', { exact: true }).first().click()
+  await page.getByText('TimeSeries', { exact: true }).first().click()
+  await expect(page).toHaveURL(/path=/)
+  await page.getByText('ReadRecords', { exact: true }).first().click()
+  await expect(page).toHaveURL(/ReadRecords/)
+  await page.getByRole('button', { name: 'execute', exact: true }).click()
+  await expect(page.getByLabel('Records (25)', { exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'node_load1', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'node_network_transmit_bytes_rate5m', exact: true })).toBeVisible()
+  const rows = page.locator('.records-table tbody tr')
+  await expect(rows).toHaveCount(10)
+  await expect(rows.nth(0).getByLabel('No value')).toHaveCount(1)
+  await expect(rows.nth(1).getByLabel('No value')).toHaveCount(1)
+  await page.getByRole('textbox', { name: 'Search records', exact: true }).fill('Record002')
+  await expect(rows).toHaveCount(1)
+  await expect(rows.first()).toContainText('141783.53703703705')
+  await page.getByRole('button', { name: 'Export CSV', exact: true }).click()
+  await page.getByRole('radio', { name: 'Filtered records (1)', exact: true }).check()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export 1 records', exact: true }).click()
+  const stream = await (await downloadPromise).createReadStream()
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
+  const csv = Buffer.concat(chunks).toString('utf8')
+  expect(csv).toContain('"Record002","2026-11-24T09:05:00.000Z","","141783.53703703705"')
+  expect(csv).not.toContain('(no value)')
+})
