@@ -11,8 +11,10 @@ for (const theme of ['light', 'dark']) {
     const picker = page.locator('.read-records-range')
     // A custom primary/contrast pair must work too, not just the shipped palette.
     await page.addStyleTag({ content: `.v-theme--${theme} { --v-theme-primary: 120, 60, 180 !important; --v-theme-on-primary: 250, 240, 230 !important; }` })
-    await expect(page.getByRole('button', { name: 'Apply range', exact: true })).toHaveCSS('background-color', 'rgb(120, 60, 180)')
-    await expect(page.getByRole('button', { name: 'Apply range', exact: true })).toHaveCSS('color', 'rgb(250, 240, 230)')
+    await expect(page.getByRole('button', { name: 'Clear range', exact: true })).toHaveCSS('background-color', 'rgb(120, 60, 180)')
+    await expect(page.getByRole('button', { name: 'Clear range', exact: true })).toHaveCSS('color', 'rgb(250, 240, 230)')
+    await expect(page.getByRole('button', { name: 'Apply range', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toHaveCount(0)
     await expect(page.locator('.calendar-marker').first()).toHaveCSS('background-color', 'rgb(120, 60, 180)')
     await expect(page.locator('.calendar-marker').first()).toHaveCSS('color', 'rgb(250, 240, 230)')
     const surface = await picker.evaluate(element => {

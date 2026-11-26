@@ -1,14 +1,13 @@
 <template>
   <div class="read-records-range">
-    <div class="range-summary-label">Time range</div>
-
-    <div v-if="appliedValid" class="range-summary-line">
-      <div aria-live="polite" class="range-summary-value" role="status">
-        {{ formatRangeTimestamp(startValue, appliedOffset, hourFormat) }}<span class="range-summary-arrow">{{ ' → ' }}</span>{{ formatRangeTimestamp(endValue, appliedOffset, hourFormat) }}
+    <div class="range-summary-line">
+      <div class="range-summary-content">
+        <div class="range-summary-label">Time range</div>
+        <div v-if="appliedValid" aria-live="polite" class="range-summary-value" role="status">
+          {{ formatRangeTimestamp(startValue, appliedOffset, hourFormat) }}<span class="range-summary-arrow">{{ ' → ' }}</span>{{ formatRangeTimestamp(endValue, appliedOffset, hourFormat) }}
+        </div>
       </div>
-
-      <span class="range-summary-offset">{{ offsetLabel(appliedOffset) }}</span>
-      <span class="range-summary-badge">{{ rangeDuration(Date.parse(endValue) - Date.parse(startValue)) }} · {{ appliedPreset }}</span>
+      <v-btn class="range-clear" color="primary" :disabled="disabled" :elevation="0" height="40" rounded="sm" variant="flat" @click="clearDraft">Clear range</v-btn>
     </div>
 
     <v-card
@@ -18,11 +17,6 @@
       variant="flat"
       @keydown.esc.prevent="cancel"
     >
-      <div class="range-picker-header">
-        <div class="range-picker-title">Select range</div>
-        <div class="range-picker-subtitle">Choose a start and end time for your time-series query.</div>
-      </div>
-
       <ReadRecordsRangeForm
         ref="form"
         :active-endpoint="activeEndpoint"
@@ -42,50 +36,15 @@
         @preset="selectPreset"
       />
 
-      <div class="range-picker-footer">
-        <v-btn
-          class="range-clear"
-          color="primary"
-          :disabled="disabled"
-          :elevation="0"
-          height="40"
-          rounded="sm"
-          variant="text"
-          @click="clearDraft"
-        >Clear range</v-btn>
-
-        <span aria-live="polite" class="range-footer-summary">{{ draftSummary }}</span>
-
-        <v-btn
-          class="range-cancel"
-          :disabled="disabled"
-          :elevation="0"
-          height="40"
-          rounded="sm"
-          variant="outlined"
-          @click="cancel"
-        >Cancel</v-btn>
-
-        <v-btn
-          class="range-apply"
-          color="primary"
-          :disabled="disabled || !draftRange"
-          :elevation="0"
-          height="40"
-          rounded="sm"
-          variant="flat"
-          @click="apply"
-        >Apply range</v-btn>
-      </div>
     </v-card>
   </div>
 </template>
 
 <script lang="ts" setup>
   import {
-    emptyTimePoint, formatRangeDate, formatRangeTimestamp,
-    normalizeRecordRange, offsetLabel, pointError, pointFromUtc, pointToUtc, type QuickRange,
-    quickRecordRange, rangeDuration, type RecordRange, recordRangeValid, type TimePoint, validOffset,
+    emptyTimePoint, formatRangeTimestamp,
+    normalizeRecordRange, pointError, pointFromUtc, pointToUtc, type QuickRange,
+    quickRecordRange, type RecordRange, recordRangeValid, type TimePoint, validOffset,
   } from './fixedOffsetRange'
 
   const props = withDefaults(defineProps<{ startValue: string, endValue: string, disabled?: boolean, initialOffset?: number }>(), { disabled: false })
@@ -126,12 +85,6 @@
     if (draftError.value) return null
     const range = normalizeRecordRange(pointToUtc(draftStart.value, draftOffset.value, hourFormat), pointToUtc(draftEnd.value, draftOffset.value, hourFormat))
     return recordRangeValid(range.start, range.end) ? range : null
-  })
-  const draftSummary = computed(() => {
-    if (!draftRange.value) return 'Select a start and end'
-    const start = pointFromUtc(draftRange.value.start, draftOffset.value, hourFormat).date
-    const end = pointFromUtc(draftRange.value.end, draftOffset.value, hourFormat).date
-    return `${formatRangeDate(start, start.slice(0, 4) !== end.slice(0, 4))} – ${formatRangeDate(end)} · ${rangeDuration(Date.parse(draftRange.value.end) - Date.parse(draftRange.value.start))}`
   })
 
   watch(() => editing.value && !draftRange.value, value => emit('editing', value), { immediate: true })
@@ -303,29 +256,16 @@
 </script>
 
 <style scoped>
-.read-records-range { --range-accent: rgb(var(--v-theme-primary)); --range-endpoint: rgb(var(--v-theme-primary)); --range-tint: rgba(var(--v-theme-primary), 0.12); --range-soft: var(--range-tint); --range-border: rgba(var(--v-border-color), var(--v-border-opacity)); border: 1px solid var(--range-border); border-radius: 4px; background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); padding: 14px 18px; margin-bottom: 16px; }
-.range-summary-label { font-size: 14px; font-weight: 600; color: rgba(var(--v-theme-on-surface), 0.62); margin-bottom: 7px; }
-.range-summary-line { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; }
-.range-summary-value { flex: 1 1 350px; min-width: 0; font-size: 15px; }
+.read-records-range { --range-accent: rgb(var(--v-theme-primary)); --range-endpoint: rgb(var(--v-theme-primary)); --range-tint: rgba(var(--v-theme-primary), 0.12); --range-soft: var(--range-tint); --range-border: rgba(var(--v-border-color), var(--v-border-opacity)); container-type: inline-size; border: 1px solid var(--range-border); border-radius: 4px; background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); margin-bottom: 16px; overflow: hidden; }
+.range-summary-label { font-size: 20px; font-weight: 600; margin-bottom: 14px; }
+.range-summary-line { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; padding: 18px; border-bottom: 1px solid var(--range-border); background: rgba(var(--v-theme-primary), 0.04); }
+.range-summary-content { flex: 1 1 350px; min-width: 0; }
+.range-summary-value { font-size: 15px; }
 .range-summary-arrow { display: inline-block; padding: 0 10px; vertical-align: middle; }
-.range-summary-offset { font-size: 14px; color: rgba(var(--v-theme-on-surface), 0.62); white-space: nowrap; }
-.range-summary-badge { background: var(--range-soft); color: var(--range-accent); font-size: 14px; font-weight: 600; padding: 7px 14px; border-radius: 4px; white-space: nowrap; }
-.read-records-picker { border: 1px solid var(--range-border); border-radius: 6px; width: 100%; max-width: 760px; }
-.range-picker-header { padding: 22px 26px 18px; border-bottom: 1px solid var(--range-border); }
-.range-picker-title { font-size: 24px; line-height: 1.4; font-weight: 700; }
-.range-picker-subtitle { margin-top: 4px; font-size: 15px; color: rgba(var(--v-theme-on-surface), 0.62); }
-.range-picker-footer { display: flex; align-items: center; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--range-border); }
-.range-picker-footer :deep(.v-btn) { text-transform: none; letter-spacing: normal; border-radius: 4px; }
-.range-footer-summary { flex: 1; min-width: 0; font-size: 13px; color: rgba(var(--v-theme-on-surface), 0.62); }
-.range-clear { padding: 0 12px; }
-.range-cancel { border: 1px solid var(--range-border); background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); min-width: 104px; padding: 0 20px; }
-.range-apply { min-width: 144px; padding: 0 20px; }
-@media (max-width: 600px) {
-  .read-records-range { padding: 12px; }
-  .range-summary-value { flex-basis: 100%; font-size: 13px; }
-  .range-picker-header { padding: 16px; }
-  .range-picker-title { font-size: 21px; }
-  .range-picker-footer { padding: 12px; gap: 6px; flex-wrap: wrap; }
-  .range-footer-summary { flex-basis: calc(100% - 140px); }
+.read-records-picker { width: 100%; }
+.range-clear { padding: 0 24px; text-transform: none; letter-spacing: normal; }
+@container (max-width: 600px) {
+  .range-summary-line { padding: 12px; }
+  .range-summary-value { font-size: 13px; }
 }
 </style>

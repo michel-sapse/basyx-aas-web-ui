@@ -22,23 +22,6 @@
         <v-icon v-if="preset === item" icon="mdi-check" size="18" />
       </v-btn>
 
-      <div class="range-timezone">
-        <label>Time zone · Fixed offset</label>
-
-        <v-select
-          aria-label="Time zone fixed offset"
-          bg-color="surface"
-          class="font-weight-medium"
-          density="compact"
-          :disabled="disabled"
-          hide-details
-          :items="offsets"
-          :model-value="offset"
-          variant="outlined"
-          @update:model-value="emit('offset', Number($event))"
-        />
-
-      </div>
     </aside>
 
     <div class="range-main">
@@ -80,8 +63,6 @@
         @date-click="emit('date', $event)"
       />
 
-      <v-divider class="my-3" />
-
       <div class="range-time-rows">
         <RangeTimeRow
           ref="startRow"
@@ -106,6 +87,21 @@
           @confirm="emit('confirm')"
           @part-change="(field: keyof TimePoint, value: string) => emit('point-change', 'end', field, value)"
         />
+        <div class="range-timezone">
+          <label>Time zone · Fixed offset</label>
+          <v-select
+            aria-label="Time zone fixed offset"
+            bg-color="surface"
+            class="font-weight-medium"
+            density="compact"
+            :disabled="disabled"
+            hide-details
+            :items="offsets"
+            :model-value="offset"
+            variant="outlined"
+            @update:model-value="emit('offset', Number($event))"
+          />
+        </div>
       </div>
 
       <div v-if="error && !dateError('start') && !dateError('end') && !timeError('start') && !timeError('end')" class="text-error text-body-small mt-2" role="alert">{{ error }}</div>
@@ -162,24 +158,31 @@
 </script>
 
 <style scoped>
-.range-form { display: grid; grid-template-columns: 29.5% minmax(0, 1fr); }
+.range-form { display: grid; grid-template-columns: 180px minmax(0, 1fr); }
 .range-sidebar { display: flex; flex-direction: column; padding: 22px 12px 16px; background: rgba(var(--v-theme-on-surface), 0.035); border-right: 1px solid var(--range-border); }
 .range-sidebar-heading { font-size: 12px; font-weight: 700; color: rgba(var(--v-theme-on-surface), 0.62); padding: 0 12px 15px; }
 .range-preset { justify-content: flex-start; text-align: left; padding: 0 12px; color: rgb(var(--v-theme-on-surface)); font-size: 16px; font-weight: 400; letter-spacing: normal; box-shadow: none; }
 .range-preset :deep(.v-btn__content) { display: flex; width: 100%; justify-content: space-between; align-items: center; }
 .range-preset:hover { background: rgba(var(--v-theme-on-surface), 0.035); }
 .range-preset.selected { background: var(--range-soft, var(--range-tint)); color: var(--range-accent); font-weight: 600; }
-.range-timezone { margin-top: auto; padding: 22px 12px 0; }
+.range-timezone { max-width: 220px; }
 .range-timezone label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 500; color: rgba(var(--v-theme-on-surface), 0.62); }
-.range-main { padding: 20px 26px 12px; min-width: 0; }
-.range-date-fields { display: grid; grid-template-columns: 1fr 24px 1fr; align-items: end; margin-bottom: 20px; }
+.range-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 0.9fr); column-gap: 36px; padding: 20px 26px 24px; min-width: 0; }
+.range-date-fields { grid-column: 1; display: grid; grid-template-columns: 1fr 24px 1fr; align-items: end; margin-bottom: 20px; }
+.range-main > :deep(.calendar-figma) { grid-column: 1; }
+.range-main > [role="alert"] { grid-column: 1 / -1; }
 .range-date-field { min-width: 0; }
 .range-date-field span { display: block; margin-bottom: 6px; color: rgba(var(--v-theme-on-surface), 0.62); font-size: 13px; }
 .range-date-field input { border: 1px solid var(--range-border); border-radius: 4px; width: 100%; height: 44px; padding: 0 12px; outline: none; font: inherit; font-size: 15px; font-weight: 600; background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); }
 .range-date-field.active input { border-color: var(--range-accent); box-shadow: inset 0 0 0 1px var(--range-accent); }
 .range-date-arrow { text-align: center; padding-bottom: 12px; color: rgba(var(--v-theme-on-surface), 0.5); }
-.range-time-rows { display: grid; gap: 6px; }
-@media (max-width: 600px) {
+.range-time-rows { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; gap: 28px; padding-top: 16px; min-width: 0; }
+.range-time-rows :deep(.range-time-row) { grid-template-columns: 1fr; gap: 8px; }
+@container (max-width: 1000px) {
+  .range-main { grid-template-columns: minmax(0, 1fr); }
+  .range-time-rows { grid-column: 1; grid-row: auto; }
+}
+@container (max-width: 600px) {
   .range-form { grid-template-columns: 1fr; }
   .range-sidebar { border-right: 0; border-bottom: 1px solid var(--range-border); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .range-sidebar-heading, .range-timezone { grid-column: 1 / -1; }
