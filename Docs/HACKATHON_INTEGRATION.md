@@ -7,13 +7,16 @@ It is not the source branch for an upstream feature PR.
 
 - `feature/operation-result-table` (`ef7f3a7`): output rendering, temporary
   invocation results, search, filters, column selection and CSV export.
-- `feat/readrecords-date-time-picker` (`254bc94`): ReadRecords date-time selection
-  and Timespan Range input.
+- `feat/readrecords-date-time-picker` (`baeb49a`): theme-aware, responsive
+  ReadRecords date-time selection with fixed-height quick ranges, automatic
+  updates and support for both Timespan Range and legacy start/end inputs.
 - `query_favorites` (`2c5590a`): named advanced AAS-search query favorites,
   saved in browser localStorage with edit, run and delete controls.
+- `feat/spatial-layout-preview` (`b0d6f0d`): spatial placement preview and
+  coordinate editor; coordinates are persisted only through explicit Save.
 - Base: `main` / upstream commit `91c429a`, including the dependency updates.
 
-All three features are included. Query favorites are saved search definitions,
+All four features are included. Query favorites are saved search definitions,
 not bookmarks of individual assets.
 
 The record table uses `Metadata.Record` for column order, names and types,
