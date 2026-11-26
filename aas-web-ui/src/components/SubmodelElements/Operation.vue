@@ -58,11 +58,13 @@
               <v-divider v-if="variable.value && variable.value.description" class="mt-1" />
               <!-- Variable Value -->
               <!-- Value Representation depending on the ModelType -->
-              <TimespanRangeInput
+              <ReadRecordsRangePicker
                 v-if="variableType.type === 'inputVariables' && isTimespanRange(variable.value)"
-                :is-editable="variablesEditable && !loading"
-                :range-object="variable.value"
-                @update-range="updateOperationRange($event, variable.value)"
+                :disabled="!variablesEditable || loading"
+                :start-value="timespanPickerTimestamp(variable.value.min)"
+                :end-value="timespanPickerTimestamp(variable.value.max)"
+                @editing="rangeEditing = $event"
+                @update-range="updateOperationRange({ min: $event.start, max: $event.end }, variable.value)"
               />
 
               <Property
@@ -284,6 +286,11 @@
     if (!readRecordsBounds.value) return
     readRecordsBounds.value.start.value = range.start
     readRecordsBounds.value.end.value = range.end
+  }
+
+  function timespanPickerTimestamp (value: unknown): string {
+    if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) return ''
+    return new Date(value).toISOString()
   }
 
   function clearFields (): void {
