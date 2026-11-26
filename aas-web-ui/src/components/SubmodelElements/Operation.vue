@@ -61,8 +61,8 @@
               <ReadRecordsRangePicker
                 v-if="variableType.type === 'inputVariables' && isTimespanRange(variable.value)"
                 :disabled="!variablesEditable || loading"
-                :start-value="timespanPickerTimestamp(variable.value.min)"
                 :end-value="timespanPickerTimestamp(variable.value.max)"
+                :start-value="timespanPickerTimestamp(variable.value.min)"
                 @editing="rangeEditing = $event"
                 @update-range="updateOperationRange({ min: $event.start, max: $event.end }, variable.value)"
               />

@@ -22,6 +22,7 @@ test('Timespan Range uses the shared picker and submits min/max without rewritin
   await page.getByText('TimeSeries', { exact: true }).first().click()
   await page.getByText('ReadRecords', { exact: true }).first().click()
   await expect(page.getByRole('region', { name: 'Select range', exact: true })).toBeVisible()
+  await page.getByRole('checkbox', { name: 'Run asynchronously' }).uncheck()
   await page.getByRole('button', { name: 'execute', exact: true }).click()
   await expect.poll(() => inputs.length).toBe(1)
   expect(inputs[0]).toEqual([{ value: timespan }])
