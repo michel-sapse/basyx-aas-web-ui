@@ -24,5 +24,36 @@ for (const theme of ['light', 'dark']) {
     })
     await expect(picker).toHaveCSS('background-color', surface.background)
     await expect(page.locator('.range-date-field input').first()).toHaveCSS('color', surface.foreground)
+    await page.setViewportSize({ width: 1600, height: 1000 })
+    await picker.evaluate(element => {
+      (element as HTMLElement).style.width = '1200px'
+    })
+    const calendar = page.locator('.date-range-calendar')
+    const times = page.locator('.range-time-rows')
+    await expect.poll(async () => {
+      const left = await calendar.boundingBox()
+      const right = await times.boundingBox()
+      return right!.x >= left!.x + left!.width
+    }).toBe(true)
+    // Narrow panel inside a wide viewport: container width, not viewport width.
+    await picker.evaluate(element => {
+      (element as HTMLElement).style.width = '700px'
+    })
+    await expect.poll(async () => {
+      const top = await calendar.boundingBox()
+      const bottom = await times.boundingBox()
+      return bottom!.y >= top!.y + top!.height
+    }).toBe(true)
+    await picker.evaluate(element => {
+      (element as HTMLElement).style.width = '320px'
+    })
+    await expect.poll(async () => {
+      const box = await times.boundingBox()
+      const panel = await picker.boundingBox()
+      return box!.x + box!.width <= panel!.x + panel!.width
+    }).toBe(true)
+    await page.getByRole('button', { name: 'Clear range', exact: true }).click()
+    await expect(page.locator('.calendar-marker')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'execute', exact: true })).toBeDisabled()
   })
 }

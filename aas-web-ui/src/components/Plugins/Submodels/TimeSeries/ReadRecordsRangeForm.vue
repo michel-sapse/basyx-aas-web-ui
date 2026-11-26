@@ -87,8 +87,10 @@
           @confirm="emit('confirm')"
           @part-change="(field: keyof TimePoint, value: string) => emit('point-change', 'end', field, value)"
         />
+
         <div class="range-timezone">
           <label>Time zone · Fixed offset</label>
+
           <v-select
             aria-label="Time zone fixed offset"
             bg-color="surface"

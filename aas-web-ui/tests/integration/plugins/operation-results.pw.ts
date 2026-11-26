@@ -39,7 +39,7 @@ test('ReadRecords results survive tree navigation and paginate without persisten
   await page.getByText('ReadRecords', { exact: true }).first().click()
   await expect(page).toHaveURL(/ReadRecords/)
   await expect(page.getByRole('region', { name: 'Select range', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Apply range', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'execute', exact: true })).toBeEnabled()
   const invocationPromise = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/ReadRecords/invoke'))
   await page.getByRole('button', { name: 'execute', exact: true }).click()
   const invocation = await invocationPromise
