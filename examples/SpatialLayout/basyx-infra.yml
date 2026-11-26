@@ -1,0 +1,10 @@
+infrastructures:
+  default: spatial
+  spatial:
+    name: Spatial layout demo
+    template: mono-all
+    components:
+      aasEnvironment:
+        baseUrl: "http://localhost:19081"
+    security:
+      type: none

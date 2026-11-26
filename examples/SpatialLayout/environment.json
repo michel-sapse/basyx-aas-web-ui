@@ -1,0 +1,1862 @@
+{
+  "assetAdministrationShells": [
+    {
+      "modelType": "AssetAdministrationShell",
+      "idShort": "RackDemo",
+      "id": "urn:basyx:demo:aas:RackDemo",
+      "description": [
+        {
+          "language": "en",
+          "text": "Synthetic spatial-layout demo shell. RackDemo represents the Area polygon."
+        }
+      ],
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": "urn:basyx:demo:asset:RackDemo"
+      },
+      "submodels": [
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "urn:basyx:demo:positional-data"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modelType": "AssetAdministrationShell",
+      "idShort": "Server01",
+      "id": "urn:basyx:demo:aas:Server01",
+      "description": [
+        {
+          "language": "en",
+          "text": "Synthetic spatial-layout demo shell. RackDemo represents the Area polygon."
+        }
+      ],
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": "urn:basyx:demo:asset:Server01"
+      },
+      "submodels": [
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "urn:basyx:demo:positional-data"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modelType": "AssetAdministrationShell",
+      "idShort": "Server02",
+      "id": "urn:basyx:demo:aas:Server02",
+      "description": [
+        {
+          "language": "en",
+          "text": "Synthetic spatial-layout demo shell. RackDemo represents the Area polygon."
+        }
+      ],
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": "urn:basyx:demo:asset:Server02"
+      },
+      "submodels": [
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "urn:basyx:demo:positional-data"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "submodels": [
+    {
+      "administration": {
+        "revision": "0",
+        "templateId": "urn:apeirora.eu:idcm:smt:AssetPositionalData:2.1",
+        "version": "1"
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Synthetic rack/server correction demo adapted from the supplied PositionalData sample. PreviewName, PreviewGeometry and MountingReference are demo extensions."
+        }
+      ],
+      "id": "urn:basyx:demo:positional-data",
+      "idShort": "PositionalData",
+      "kind": "Instance",
+      "modelType": "Submodel",
+      "semanticId": {
+        "keys": [
+          {
+            "type": "GlobalReference",
+            "value": "urn:apeirora.eu:idcm:cd:assetPositionalData:Submodel"
+          }
+        ],
+        "type": "ExternalReference"
+      },
+      "submodelElements": [
+        {
+          "description": [
+            {
+              "language": "en",
+              "text": "Spatial area occupied by the asset. Cardinality [0,1]."
+            }
+          ],
+          "idShort": "Area",
+          "modelType": "SubmodelElementCollection",
+          "semanticId": {
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:area:1.0"
+              }
+            ],
+            "type": "ExternalReference"
+          },
+          "value": [
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Human-readable name of the area. Mandatory when Area is present."
+                }
+              ],
+              "idShort": "Name",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:areaname:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "rack 001",
+              "valueType": "xs:string"
+            },
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Kind of area (StorageZone, ServerRoom, ...)."
+                }
+              ],
+              "idShort": "Type",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:areatype:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "RackFrontSurface",
+              "valueType": "xs:string"
+            },
+            {
+              "idShort": "Description",
+              "modelType": "MultiLanguageProperty",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:areadescription:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": [
+                {
+                  "language": "en",
+                  "text": "Rack front surface"
+                }
+              ]
+            },
+            {
+              "idShort": "SurfacePolygon",
+              "modelType": "SubmodelElementCollection",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:surfacepolygon:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": [
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Reference to the CoordinateSystem of this submodel or of another Asset Positional Data submodel."
+                    }
+                  ],
+                  "idShort": "CoordinateSystemReference",
+                  "modelType": "ReferenceElement",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:coordinatesystemref:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": {
+                    "keys": [
+                      {
+                        "type": "Submodel",
+                        "value": "urn:basyx:demo:positional-data"
+                      },
+                      {
+                        "type": "SubmodelElementCollection",
+                        "value": "CoordinateSystem"
+                      }
+                    ],
+                    "type": "ModelReference"
+                  }
+                },
+                {
+                  "idShort": "Plane",
+                  "modelType": "Property",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:plane:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": "YZ",
+                  "valueType": "xs:string"
+                },
+                {
+                  "idShort": "PolygonCoordinates",
+                  "modelType": "SubmodelElementList",
+                  "orderRelevant": true,
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:polygoncoordinates:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "typeValueListElement": "SubmodelElementCollection",
+                  "value": [
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:polygonpoint:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": [
+                        {
+                          "idShort": "Xvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis1:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        },
+                        {
+                          "idShort": "Yvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis2:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:polygonpoint:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": [
+                        {
+                          "idShort": "Xvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis1:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.597",
+                          "valueType": "xs:float"
+                        },
+                        {
+                          "idShort": "Yvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis2:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:polygonpoint:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": [
+                        {
+                          "idShort": "Xvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis1:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.597",
+                          "valueType": "xs:float"
+                        },
+                        {
+                          "idShort": "Yvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis2:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "45.2",
+                          "valueType": "xs:float"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:polygonpoint:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": [
+                        {
+                          "idShort": "Xvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis1:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        },
+                        {
+                          "idShort": "Yvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis2:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "45.2",
+                          "valueType": "xs:float"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:polygonpoint:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": [
+                        {
+                          "idShort": "Xvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis1:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        },
+                        {
+                          "idShort": "Yvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:planeaxis2:1.0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "description": [
+            {
+              "language": "en",
+              "text": "Top-level Cartesian coordinate system of this submodel. May be referenced from SurfacePolygon and Positions entries of this or other Asset Positional Data submodels."
+            }
+          ],
+          "idShort": "CoordinateSystem",
+          "modelType": "SubmodelElementCollection",
+          "semanticId": {
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/idta/sml/coordinatesystems/1/0"
+              }
+            ],
+            "type": "ExternalReference"
+          },
+          "value": [
+            {
+              "idShort": "CoordinateSystemName",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/prop/coordinatesystemname/1/0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "coord_0",
+              "valueType": "xs:string"
+            },
+            {
+              "idShort": "CoordinateSystemId",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/prop/coordinatesystemid/1/0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "coord_0",
+              "valueType": "xs:string"
+            },
+            {
+              "idShort": "CoordinateSystemType",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/prop/coordinatesystemtype/1/0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "Cartesian",
+              "valueType": "xs:string"
+            },
+            {
+              "idShort": "ElevationReference",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/prop/elevationreference/1/0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "",
+              "valueType": "xs:string"
+            },
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Height of the coordinate origin above sea level, expressed in the length unit declared by Units/LengthUnitZ."
+                }
+              ],
+              "idShort": "SeaLevelOfBaseHeight",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/prop/sealevelofbaseheight/1/0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "0.0",
+              "valueType": "xs:float"
+            },
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Reference forward direction of the coordinate system, encoded as a signed-axis string. Allowed values: '+X', '-X', '+Y', '-Y', '+Z', '-Z'. An asset whose EulerAngles are all zero is aligned with this direction."
+                }
+              ],
+              "idShort": "ForwardDirection",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:signedaxisdirection:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "+X",
+              "valueType": "xs:string"
+            },
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Reference up direction of the coordinate system, same encoding as ForwardDirection. Must be orthogonal to ForwardDirection. Together they fully determine the orientation of the coordinate frame."
+                }
+              ],
+              "idShort": "UpDirection",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:signedaxisdirection:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "+Z",
+              "valueType": "xs:string"
+            },
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Intrinsic rotation order for Euler angles applied to assets whose orientation is expressed in this coordinate system. Encoded as a 3-letter string using Y=Yaw, P=Pitch, R=Roll; default is 'YPR'."
+                }
+              ],
+              "idShort": "EulerAnglesOrder",
+              "modelType": "Property",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:euleranglesorder:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": "YPR",
+              "valueType": "xs:string"
+            },
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Units associated with the axes of this coordinate system (mandatory). Each UnitSpecification carries a Name, a MultiplyingFactor and a PhysicalUnit. Defaults: metres for lengths, degrees for angles, factor 1.0."
+                }
+              ],
+              "idShort": "Units",
+              "modelType": "SubmodelElementCollection",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:coordinatesystemunits:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": [
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Unit applied to the X component of Cartesian coordinates, polygon RegionPoint X values, and GroundControlPoints RelativeCoordinates X. Conversion rule: value_in_PhysicalUnit = stored_value * MultiplyingFactor."
+                    }
+                  ],
+                  "idShort": "LengthUnitX",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitspecification:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "idShort": "Name",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitname:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "Metre",
+                      "valueType": "xs:string"
+                    },
+                    {
+                      "idShort": "MultiplyingFactor",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:multiplyingfactor:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "1.0",
+                      "valueType": "xs:double"
+                    },
+                    {
+                      "idShort": "PhysicalUnit",
+                      "modelType": "ReferenceElement",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA551#006"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA551#006"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Unit applied to the Y component of Cartesian coordinates, polygon RegionPoint Y values, and GroundControlPoints RelativeCoordinates Y. Conversion rule: value_in_PhysicalUnit = stored_value * MultiplyingFactor."
+                    }
+                  ],
+                  "idShort": "LengthUnitY",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitspecification:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "idShort": "Name",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitname:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "Metre",
+                      "valueType": "xs:string"
+                    },
+                    {
+                      "idShort": "MultiplyingFactor",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:multiplyingfactor:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "1.0",
+                      "valueType": "xs:double"
+                    },
+                    {
+                      "idShort": "PhysicalUnit",
+                      "modelType": "ReferenceElement",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA551#006"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA551#006"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Unit applied to the Z component of Cartesian coordinates and to SeaLevelOfBaseHeight. Conversion rule: value_in_PhysicalUnit = stored_value * MultiplyingFactor."
+                    }
+                  ],
+                  "idShort": "LengthUnitZ",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitspecification:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "idShort": "Name",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitname:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "Rack Unit",
+                      "valueType": "xs:string"
+                    },
+                    {
+                      "idShort": "MultiplyingFactor",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:multiplyingfactor:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.04445",
+                      "valueType": "xs:double"
+                    },
+                    {
+                      "idShort": "PhysicalUnit",
+                      "modelType": "ReferenceElement",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA551#006"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA551#006"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Unit applied to Yaw, Pitch and Roll of EulerAngles referencing this coordinate system. Does not apply to GroundControlPoints/GeographicCoordinates, which are always WGS84 degrees."
+                    }
+                  ],
+                  "idShort": "AngleUnit",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitspecification:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "idShort": "Name",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:unitname:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "Degree",
+                      "valueType": "xs:string"
+                    },
+                    {
+                      "idShort": "MultiplyingFactor",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:multiplyingfactor:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "1.0",
+                      "valueType": "xs:double"
+                    },
+                    {
+                      "idShort": "PhysicalUnit",
+                      "modelType": "ReferenceElement",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA117#005"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#05-AAA117#005"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "idShort": "GroundControlPoints",
+              "modelType": "SubmodelElementList",
+              "orderRelevant": true,
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:groundcontrolpoints:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "typeValueListElement": "SubmodelElementCollection",
+              "value": [
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:groundcontrolpoint:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "WGS84 geographic coordinates in decimal degrees. Not affected by the AngleUnit of this coordinate system."
+                        }
+                      ],
+                      "idShort": "GeographicCoordinates",
+                      "modelType": "SubmodelElementCollection",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#02-ABH934#002"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": [
+                        {
+                          "idShort": "Longitude",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "0173-1#02-ABH961#002"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:double"
+                        },
+                        {
+                          "idShort": "Latitude",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "0173-1#02-ABH960#002"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:double"
+                        }
+                      ]
+                    },
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "Cartesian coordinates of the ground control point in this coordinate system, expressed in the length units declared by Units/LengthUnitX and Units/LengthUnitY."
+                        }
+                      ],
+                      "idShort": "RelativeCoordinates",
+                      "modelType": "SubmodelElementCollection",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#02-ABG741#001"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": [
+                        {
+                          "idShort": "Xvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/prop/x/1/0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        },
+                        {
+                          "idShort": "Yvalue",
+                          "modelType": "Property",
+                          "semanticId": {
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/prop/y/1/0"
+                              }
+                            ],
+                            "type": "ExternalReference"
+                          },
+                          "value": "0.0",
+                          "valueType": "xs:float"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "description": [
+            {
+              "language": "en",
+              "text": "List of positions. Cardinality [0, *]. Each entry references one AAS (Asset), one coordinate system and provides Cartesian (x, y, z) coordinates and Euler angles (yaw, pitch, roll)."
+            }
+          ],
+          "idShort": "Positions",
+          "modelType": "SubmodelElementList",
+          "orderRelevant": true,
+          "semanticId": {
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:positions:1.0"
+              }
+            ],
+            "type": "ExternalReference"
+          },
+          "typeValueListElement": "SubmodelElementCollection",
+          "value": [
+            {
+              "modelType": "SubmodelElementCollection",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABI783#001"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": [
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Model reference to the AAS whose position (location and orientation) is being described by this entry."
+                    }
+                  ],
+                  "idShort": "Asset",
+                  "modelType": "ReferenceElement",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:assetreference:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": {
+                    "keys": [
+                      {
+                        "type": "AssetAdministrationShell",
+                        "value": "urn:basyx:demo:aas:Server01"
+                      }
+                    ],
+                    "type": "ModelReference"
+                  }
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Reference to the CoordinateSystem of this submodel or of the CoordinateSystem defined in another Asset Positional Data submodel."
+                    }
+                  ],
+                  "idShort": "CoordinateSystemReference",
+                  "modelType": "ReferenceElement",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:coordinatesystemref:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": {
+                    "keys": [
+                      {
+                        "type": "Submodel",
+                        "value": "urn:basyx:demo:positional-data"
+                      },
+                      {
+                        "type": "SubmodelElementCollection",
+                        "value": "CoordinateSystem"
+                      }
+                    ],
+                    "type": "ModelReference"
+                  }
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Cartesian coordinates in the referenced coordinate system, each component expressed in the corresponding length unit declared under that CoordinateSystem's Units block (LengthUnitX, LengthUnitY, LengthUnitZ)."
+                    }
+                  ],
+                  "idShort": "CartesianCoordinates",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:cartesiancoordinates:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "idShort": "Xvalue",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/prop/x/1/0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "idShort": "Yvalue",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/prop/y/1/0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "idShort": "Zvalue",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/prop/z/1/0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "22.0",
+                      "valueType": "xs:float"
+                    }
+                  ]
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Euler angles (yaw, pitch, roll) expressed in the angle unit declared by the referenced CoordinateSystem's Units/AngleUnit. The rotation order is defined by EulerAnglesOrder of the referenced coordinate system (default: yaw -> pitch -> roll)."
+                    }
+                  ],
+                  "idShort": "EulerAngles",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:eulerangles:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "Yaw angle. Applied first."
+                        }
+                      ],
+                      "idShort": "Yaw",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:yaw:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "Pitch angle. Applied second."
+                        }
+                      ],
+                      "idShort": "Pitch",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:pitch:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "Roll angle. Applied third."
+                        }
+                      ],
+                      "idShort": "Roll",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:roll:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "idShort": "PreviewName",
+                  "valueType": "xs:string",
+                  "value": "Server 01 · offset demo"
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "PreviewGeometry",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Synthetic centered axis-aligned schematic spans in the declared axis units. Not actual CAD geometry."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:basyx:demo:positional-data:PreviewGeometry"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "idShort": "Xvalue",
+                      "valueType": "xs:double",
+                      "value": "0.55"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Yvalue",
+                      "valueType": "xs:double",
+                      "value": "0.42"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Zvalue",
+                      "valueType": "xs:double",
+                      "value": "2"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "MountingReference",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Synthetic known mounting coordinates BEFORE PositionsOffset; axis units apply."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:basyx:demo:positional-data:MountingReference"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "idShort": "Xvalue",
+                      "valueType": "xs:double",
+                      "value": "0"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Yvalue",
+                      "valueType": "xs:double",
+                      "value": "0"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Zvalue",
+                      "valueType": "xs:double",
+                      "value": "20"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABI783#001"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": [
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Model reference to the AAS whose position (location and orientation) is being described by this entry."
+                    }
+                  ],
+                  "idShort": "Asset",
+                  "modelType": "ReferenceElement",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:assetreference:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": {
+                    "keys": [
+                      {
+                        "type": "AssetAdministrationShell",
+                        "value": "urn:basyx:demo:aas:Server02"
+                      }
+                    ],
+                    "type": "ModelReference"
+                  }
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Reference to the CoordinateSystem of this submodel or of the CoordinateSystem defined in another Asset Positional Data submodel."
+                    }
+                  ],
+                  "idShort": "CoordinateSystemReference",
+                  "modelType": "ReferenceElement",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:coordinatesystemref:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": {
+                    "keys": [
+                      {
+                        "type": "Submodel",
+                        "value": "urn:basyx:demo:positional-data"
+                      },
+                      {
+                        "type": "SubmodelElementCollection",
+                        "value": "CoordinateSystem"
+                      }
+                    ],
+                    "type": "ModelReference"
+                  }
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Cartesian coordinates in the referenced coordinate system, each component expressed in the corresponding length unit declared under that CoordinateSystem's Units block (LengthUnitX, LengthUnitY, LengthUnitZ)."
+                    }
+                  ],
+                  "idShort": "CartesianCoordinates",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:cartesiancoordinates:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "idShort": "Xvalue",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/prop/x/1/0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "idShort": "Yvalue",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/prop/y/1/0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "idShort": "Zvalue",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/prop/z/1/0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "28.0",
+                      "valueType": "xs:float"
+                    }
+                  ]
+                },
+                {
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Euler angles (yaw, pitch, roll) expressed in the angle unit declared by the referenced CoordinateSystem's Units/AngleUnit. The rotation order is defined by EulerAnglesOrder of the referenced coordinate system (default: yaw -> pitch -> roll)."
+                    }
+                  ],
+                  "idShort": "EulerAngles",
+                  "modelType": "SubmodelElementCollection",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:eulerangles:1.0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": [
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "Yaw angle. Applied first."
+                        }
+                      ],
+                      "idShort": "Yaw",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:yaw:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "Pitch angle. Applied second."
+                        }
+                      ],
+                      "idShort": "Pitch",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:pitch:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    },
+                    {
+                      "description": [
+                        {
+                          "language": "en",
+                          "text": "Roll angle. Applied third."
+                        }
+                      ],
+                      "idShort": "Roll",
+                      "modelType": "Property",
+                      "semanticId": {
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:roll:1.0"
+                          }
+                        ],
+                        "type": "ExternalReference"
+                      },
+                      "value": "0.0",
+                      "valueType": "xs:float"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "idShort": "PreviewName",
+                  "valueType": "xs:string",
+                  "value": "Server 02"
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "PreviewGeometry",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Synthetic centered axis-aligned schematic spans in the declared axis units. Not actual CAD geometry."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:basyx:demo:positional-data:PreviewGeometry"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "idShort": "Xvalue",
+                      "valueType": "xs:double",
+                      "value": "0.55"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Yvalue",
+                      "valueType": "xs:double",
+                      "value": "0.42"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Zvalue",
+                      "valueType": "xs:double",
+                      "value": "2"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "MountingReference",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Synthetic known mounting coordinates BEFORE PositionsOffset; axis units apply."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "urn:basyx:demo:positional-data:MountingReference"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "idShort": "Xvalue",
+                      "valueType": "xs:double",
+                      "value": "0"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Yvalue",
+                      "valueType": "xs:double",
+                      "value": "0"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Zvalue",
+                      "valueType": "xs:double",
+                      "value": "28"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "description": [
+            {
+              "language": "en",
+              "text": "Optional Cartesian offset (cardinality [0..1]) added on top of every entry in the Positions list. The global position of the asset with respect to the referenced coordinate system is Positions[i].CartesianCoordinates + PositionsOffset.CartesianCoordinates."
+            }
+          ],
+          "idShort": "PositionsOffset",
+          "modelType": "SubmodelElementCollection",
+          "semanticId": {
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:positionsoffset:1.0"
+              }
+            ],
+            "type": "ExternalReference"
+          },
+          "value": [
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Reference to the CoordinateSystem (of this submodel or of another Asset Positional Data submodel) in which the offset is expressed. Its Units block defines the physical meaning of the X, Y, Z components below."
+                }
+              ],
+              "idShort": "CoordinateSystemReference",
+              "modelType": "ReferenceElement",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:coordinatesystemref:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": {
+                "keys": [
+                  {
+                    "type": "Submodel",
+                    "value": "urn:basyx:demo:positional-data"
+                  },
+                  {
+                    "type": "SubmodelElementCollection",
+                    "value": "CoordinateSystem"
+                  }
+                ],
+                "type": "ModelReference"
+              }
+            },
+            {
+              "description": [
+                {
+                  "language": "en",
+                  "text": "Cartesian offset vector, each component expressed in the corresponding length unit declared under the referenced CoordinateSystem's Units block (LengthUnitX, LengthUnitY, LengthUnitZ)."
+                }
+              ],
+              "idShort": "CartesianCoordinates",
+              "modelType": "SubmodelElementCollection",
+              "semanticId": {
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "urn:apeirora.eu:idcm:cd:AssetPositionalData:cartesiancoordinates:1.0"
+                  }
+                ],
+                "type": "ExternalReference"
+              },
+              "value": [
+                {
+                  "idShort": "Xvalue",
+                  "modelType": "Property",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/prop/x/1/0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": "-0.8",
+                  "valueType": "xs:float"
+                },
+                {
+                  "idShort": "Yvalue",
+                  "modelType": "Property",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/prop/y/1/0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": "0.06",
+                  "valueType": "xs:float"
+                },
+                {
+                  "idShort": "Zvalue",
+                  "modelType": "Property",
+                  "semanticId": {
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/prop/z/1/0"
+                      }
+                    ],
+                    "type": "ExternalReference"
+                  },
+                  "value": "2.18",
+                  "valueType": "xs:float"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
