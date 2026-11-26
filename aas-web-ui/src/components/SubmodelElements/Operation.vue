@@ -101,7 +101,7 @@
             <v-switch
               v-model="invokeAsynchronously"
               class="mr-3"
-              :color="readRecordsBounds ? 'readRecordsAccent' : 'primary'"
+              color="primary"
               density="compact"
               :disabled="loading"
               hide-details
@@ -112,7 +112,7 @@
             <v-btn
               v-if="isEditable"
               class="mr-3 operation-clear"
-              :color="readRecordsBounds ? 'readRecordsAccent' : 'primary'"
+              color="primary"
               :elevation="readRecordsBounds ? 0 : undefined"
               size="small"
               variant="outlined"
@@ -120,8 +120,8 @@
             >clear</v-btn>
             <!-- Execute-Button -->
             <v-btn
-              :class="readRecordsBounds ? 'text-white operation-execute' : 'text-buttonText'"
-              :color="readRecordsBounds ? 'readRecordsPrimary' : 'primary'"
+              :class="readRecordsBounds ? 'operation-execute' : 'text-buttonText'"
+              color="primary"
               :disabled="rangeIncomplete"
               :elevation="readRecordsBounds ? 0 : undefined"
               :loading="loading"

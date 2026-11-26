@@ -180,7 +180,7 @@
   padding: 0 2px 0 4px;
 }
 .range-time-chevron { min-width: 24px; padding: 0; color: rgba(var(--v-theme-on-surface), 0.6); }
-.range-time-options { background: rgb(var(--v-theme-surface)); min-width: 72px; padding: 4px 0; border: 1px solid rgb(var(--v-theme-readRecordsBorder, 213, 223, 230)); border-radius: 4px; }
+.range-time-options { background: rgb(var(--v-theme-surface)); min-width: 72px; padding: 4px 0; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 4px; }
 .range-time-option { text-align: center; font-variant-numeric: tabular-nums; color: rgb(var(--v-theme-on-surface)); letter-spacing: normal; }
-.range-time-option:hover, .range-time-option.selected { background: rgb(var(--v-theme-readRecordsTint, 227, 246, 252)); color: rgb(var(--v-theme-readRecordsAccent, 0, 129, 160)); }
+.range-time-option:hover, .range-time-option.selected { background: rgba(var(--v-theme-primary), 0.12); color: rgb(var(--v-theme-primary)); }
 </style>

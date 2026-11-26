@@ -197,7 +197,7 @@
 
 .calendar-figma .calendar-cell { position: relative; display: flex; align-items: center; justify-content: center; height: 38px; }
 .calendar-figma .calendar-day { width: 36px; min-width: 36px !important; height: 36px; border-radius: 50% !important; z-index: 1; }
-.calendar-figma .calendar-marker { color: white; background-color: var(--range-endpoint, var(--range-accent, rgb(var(--v-theme-primary)))); }
+.calendar-figma .calendar-marker { color: rgb(var(--v-theme-on-primary)); background-color: var(--range-endpoint, var(--range-accent, rgb(var(--v-theme-primary)))); }
 .calendar-figma .calendar-endpoint, .calendar-figma .calendar-between { background: transparent; border-radius: 0; }
 .calendar-figma.calendar-connected .calendar-between::before,
 .calendar-figma.calendar-connected .calendar-start::before,

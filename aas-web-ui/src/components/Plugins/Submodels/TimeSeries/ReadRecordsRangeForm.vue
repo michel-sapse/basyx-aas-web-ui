@@ -175,7 +175,7 @@
 .range-date-fields { display: grid; grid-template-columns: 1fr 24px 1fr; align-items: end; margin-bottom: 20px; }
 .range-date-field { min-width: 0; }
 .range-date-field span { display: block; margin-bottom: 6px; color: rgba(var(--v-theme-on-surface), 0.62); font-size: 13px; }
-.range-date-field input { border: 1px solid var(--range-border); border-radius: 4px; width: 100%; height: 44px; padding: 0 12px; outline: none; font: inherit; font-size: 15px; font-weight: 600; background: rgb(var(--v-theme-surface)); }
+.range-date-field input { border: 1px solid var(--range-border); border-radius: 4px; width: 100%; height: 44px; padding: 0 12px; outline: none; font: inherit; font-size: 15px; font-weight: 600; background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); }
 .range-date-field.active input { border-color: var(--range-accent); box-shadow: inset 0 0 0 1px var(--range-accent); }
 .range-date-arrow { text-align: center; padding-bottom: 12px; color: rgba(var(--v-theme-on-surface), 0.5); }
 .range-time-rows { display: grid; gap: 6px; }

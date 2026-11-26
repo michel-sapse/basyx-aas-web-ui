@@ -45,7 +45,7 @@
       <div class="range-picker-footer">
         <v-btn
           class="range-clear"
-          color="readRecordsAccent"
+          color="primary"
           :disabled="disabled"
           :elevation="0"
           height="40"
@@ -67,8 +67,8 @@
         >Cancel</v-btn>
 
         <v-btn
-          class="text-white range-apply"
-          color="readRecordsPrimary"
+          class="range-apply"
+          color="primary"
           :disabled="disabled || !draftRange"
           :elevation="0"
           height="40"
@@ -303,7 +303,7 @@
 </script>
 
 <style scoped>
-.read-records-range { --range-accent: rgb(var(--v-theme-readRecordsAccent, 0, 129, 160)); --range-endpoint: rgb(var(--v-theme-readRecordsPrimary, 0, 129, 160)); --range-tint: rgba(var(--v-theme-readRecordsAccent, 0, 129, 160), 0.12); --range-soft: rgb(var(--v-theme-readRecordsTint, 227, 246, 252)); --range-border: rgb(var(--v-theme-readRecordsBorder, 213, 223, 230)); border: 1px solid var(--range-border); border-radius: 4px; background: rgb(var(--v-theme-surface)); padding: 14px 18px; margin-bottom: 16px; }
+.read-records-range { --range-accent: rgb(var(--v-theme-primary)); --range-endpoint: rgb(var(--v-theme-primary)); --range-tint: rgba(var(--v-theme-primary), 0.12); --range-soft: var(--range-tint); --range-border: rgba(var(--v-border-color), var(--v-border-opacity)); border: 1px solid var(--range-border); border-radius: 4px; background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); padding: 14px 18px; margin-bottom: 16px; }
 .range-summary-label { font-size: 14px; font-weight: 600; color: rgba(var(--v-theme-on-surface), 0.62); margin-bottom: 7px; }
 .range-summary-line { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; }
 .range-summary-value { flex: 1 1 350px; min-width: 0; font-size: 15px; }
@@ -320,7 +320,6 @@
 .range-clear { padding: 0 12px; }
 .range-cancel { border: 1px solid var(--range-border); background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); min-width: 104px; padding: 0 20px; }
 .range-apply { min-width: 144px; padding: 0 20px; }
-:global(.v-theme--dark) .read-records-range { --range-accent: rgb(var(--v-theme-readRecordsAccent, 75, 209, 230)); --range-tint: rgba(var(--v-theme-readRecordsAccent, 75, 209, 230), 0.16); --range-soft: rgb(var(--v-theme-readRecordsTint, 21, 60, 68)); --range-border: rgb(var(--v-theme-readRecordsBorder, 70, 82, 90)); }
 @media (max-width: 600px) {
   .read-records-range { padding: 12px; }
   .range-summary-value { flex-basis: 100%; font-size: 13px; }
