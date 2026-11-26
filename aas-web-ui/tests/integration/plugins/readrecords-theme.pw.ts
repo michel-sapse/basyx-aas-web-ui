@@ -1,5 +1,41 @@
 import { expect, test } from '@playwright/test'
 
+test('Timespan Range uses the shared picker and submits min/max without rewriting initial bounds', async ({ page }) => {
+  const timespan = {
+    idShort: 'Timespan', modelType: 'Range', valueType: 'xs:dateTime',
+    min: '2026-01-01T00:00:00Z', max: '2099-12-31T23:59:59Z',
+    semanticId: { type: 'ExternalReference', keys: [{ type: 'GlobalReference', value: 'https://admin-shell.io/idta/TimeSeries/Timespan/1/1' }] },
+  }
+  await page.route('**/submodel-elements/ReadRecords', async route => {
+    const response = await route.fetch()
+    const operation = await response.json()
+    operation.inputVariables = [{ value: timespan }]
+    await route.fulfill({ json: operation })
+  })
+  const inputs: unknown[] = []
+  await page.route('**/ReadRecords/invoke', async route => {
+    inputs.push(route.request().postDataJSON().inputArguments)
+    await route.fulfill({ json: { success: true, executionState: 'Completed', outputArguments: [] } })
+  })
+  await page.goto('/', { waitUntil: 'networkidle' })
+  await page.getByText('SensorExampleAAS', { exact: true }).first().click()
+  await page.getByText('TimeSeries', { exact: true }).first().click()
+  await page.getByText('ReadRecords', { exact: true }).first().click()
+  await expect(page.getByRole('region', { name: 'Select range', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'execute', exact: true }).click()
+  await expect.poll(() => inputs.length).toBe(1)
+  expect(inputs[0]).toEqual([{ value: timespan }])
+  await page.getByRole('button', { name: 'Last 24 hours', exact: true }).click()
+  await page.getByRole('button', { name: 'execute', exact: true }).click()
+  await expect.poll(() => inputs.length).toBe(2)
+  const argument = (inputs[1] as { value: typeof timespan }[])[0].value
+  expect(argument.modelType).toBe('Range')
+  expect(Date.parse(argument.max) - Date.parse(argument.min)).toBe(86_400_000)
+  expect(inputs[1]).toHaveLength(1)
+  await page.getByRole('button', { name: 'Clear range', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'execute', exact: true })).toBeDisabled()
+})
+
 for (const theme of ['light', 'dark']) {
   test(`ReadRecords picker inherits the ${theme} UI theme`, async ({ page }) => {
     await page.addInitScript(theme => localStorage.setItem('theme', theme), theme)
