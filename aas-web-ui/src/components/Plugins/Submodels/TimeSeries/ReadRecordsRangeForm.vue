@@ -178,11 +178,11 @@
 .range-date-arrow { text-align: center; padding-bottom: 12px; color: rgba(var(--v-theme-on-surface), 0.5); }
 .range-time-rows { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; gap: 28px; padding-top: 16px; min-width: 0; }
 .range-time-rows :deep(.range-time-row) { grid-template-columns: 1fr; gap: 8px; }
-@media (max-width: 1000px) {
+@container (max-width: 1000px) {
   .range-main { grid-template-columns: minmax(0, 1fr); }
   .range-time-rows { grid-column: 1; grid-row: auto; }
 }
-@media (max-width: 600px) {
+@container (max-width: 600px) {
   .range-form { grid-template-columns: 1fr; }
   .range-sidebar { border-right: 0; border-bottom: 1px solid var(--range-border); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .range-sidebar-heading, .range-timezone { grid-column: 1 / -1; }

@@ -256,7 +256,7 @@
 </script>
 
 <style scoped>
-.read-records-range { --range-accent: rgb(var(--v-theme-primary)); --range-endpoint: rgb(var(--v-theme-primary)); --range-tint: rgba(var(--v-theme-primary), 0.12); --range-soft: var(--range-tint); --range-border: rgba(var(--v-border-color), var(--v-border-opacity)); border: 1px solid var(--range-border); border-radius: 4px; background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); margin-bottom: 16px; overflow: hidden; }
+.read-records-range { --range-accent: rgb(var(--v-theme-primary)); --range-endpoint: rgb(var(--v-theme-primary)); --range-tint: rgba(var(--v-theme-primary), 0.12); --range-soft: var(--range-tint); --range-border: rgba(var(--v-border-color), var(--v-border-opacity)); container-type: inline-size; border: 1px solid var(--range-border); border-radius: 4px; background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-on-surface)); margin-bottom: 16px; overflow: hidden; }
 .range-summary-label { font-size: 20px; font-weight: 600; margin-bottom: 14px; }
 .range-summary-line { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; padding: 18px; border-bottom: 1px solid var(--range-border); background: rgba(var(--v-theme-primary), 0.04); }
 .range-summary-content { flex: 1 1 350px; min-width: 0; }
@@ -264,7 +264,7 @@
 .range-summary-arrow { display: inline-block; padding: 0 10px; vertical-align: middle; }
 .read-records-picker { width: 100%; }
 .range-clear { padding: 0 24px; text-transform: none; letter-spacing: normal; }
-@media (max-width: 600px) {
+@container (max-width: 600px) {
   .range-summary-line { padding: 12px; }
   .range-summary-value { font-size: 13px; }
 }
