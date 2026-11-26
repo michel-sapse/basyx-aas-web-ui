@@ -48,7 +48,7 @@ export default defineConfig({
     },
     {
       name: 'integration-timeseries',
-      testMatch: ['**/plugins/timeseries.pw.ts', '**/plugins/operation-results.pw.ts'],
+      testMatch: ['**/plugins/timeseries.pw.ts', '**/plugins/operation-results.pw.ts', '**/plugins/readrecords-theme.pw.ts'],
       use: {
         baseURL: timeseriesBaseURL,
       },
